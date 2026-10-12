@@ -37,9 +37,7 @@ out/
 .vscode/
 
 
-### CLAUDE CODE ###
-CLAUDE.md
-claude.md
-cluade.md
-CLAUDE*.txt
-.claude/
+### CLAUDE CODE (personal settings only; CLAUDE.md and the rest of .claude/ are tracked) ###
+.claude/settings.local.json
+__pycache__/
+*.pyc
