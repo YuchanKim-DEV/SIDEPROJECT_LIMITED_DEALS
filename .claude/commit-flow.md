@@ -18,7 +18,8 @@ How Claude proposes commits and PRs. The rules themselves are in `docs/github-co
    - Switch to the new task now without committing
    On a task switch, name the new task in the question.
 3. **Only after the user picks the first option**, commit, push, and open the PR (`do-not.md` item 3). Stage files by name, never `git add -A`.
-4. After `gh pr create`, refresh `.claude/HANDOFF.md` (a hook reminds you). The user merges the PR.
+4. After `gh pr create`, (a) refresh `.claude/HANDOFF.md` and (b) propose blog posts for the PR and ask how to write them (`.claude/blog.md`). Hooks remind you of both. The user merges the PR.
+5. `HANDOFF.md` changes are not committed on their own; they ride along with the next work PR (as a `docs` commit).
 
 ## Split by nature
 | Changed files | Commit type |

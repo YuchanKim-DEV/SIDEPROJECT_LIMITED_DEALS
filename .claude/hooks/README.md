@@ -14,7 +14,11 @@
 
 One `UserPromptSubmit` hook: `uncommitted-reminder.py`. When the working tree has uncommitted changes, it adds a note to each prompt so Claude follows `.claude/commit-flow.md` (announce the commit plan and ask with a choice UI at a checkpoint or task switch). Silent when the tree is clean.
 
-One `PostToolUse` hook (Bash): `handoff-reminder.py`. After `gh pr create` succeeds in this repo, it injects a reminder so Claude refreshes `.claude/HANDOFF.md`. (A hook cannot write prose; it only tells Claude to.)
+Two `PostToolUse` hooks (Bash), both triggered when `gh pr create` succeeds in this repo (a hook cannot write prose; it only tells Claude to):
+- `handoff-reminder.py`: refresh `.claude/HANDOFF.md`.
+- `blog-reminder.py`: propose blog posts for the PR and ask how to write them (`.claude/blog.md`).
+
+`uncommitted-reminder.py` ignores `.claude/HANDOFF.md`, which changes constantly and rides along with the next work PR.
 
 `_common.py` holds the shared helpers. The blog repo is exempt from commit/branch/PR rules (it uses `Add post:` / `Fix post:` and commits on `main`).
 

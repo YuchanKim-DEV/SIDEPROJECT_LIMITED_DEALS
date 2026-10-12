@@ -13,11 +13,13 @@ Last updated: 2026-10-12
 - Home `~/CLAUDE.md` (merged guidance of LIGIDFPoC, Algorithm, ADJU) was deleted at the user's request, backup included. Other projects no longer get that guidance.
 
 ## Current step
-Claude setup is done (skills are added later, as the project needs them). The Claude files are being uploaded in ONE PR (`chore/claude-setup/2026-10-12`, 4 commits split by nature); the user merges it. After the merge: `git checkout main && git pull`, delete the local branch, then plan step 4.
+Claude setup is done (skills are added later, as the project needs them). The Claude files are uploaded in ONE PR: #5 (`chore/claude-setup/2026-10-12`, 4 commits split by nature), waiting for the user to merge it. After the merge: `git checkout main && git pull`, delete the local branch, then plan step 4.
 
 ## Decisions made on the way
 - One PR per purpose, one commit per nature (`docs/github-convention.md` section 3, `.claude/commit-flow.md`).
 - At a checkpoint or when the user switches tasks with uncommitted work: announce the commit plan and ask with AskUserQuestion (`uncommitted-reminder.py` hook reminds).
+- Blog posts are triggered by creating a PR: propose topics and ask how to write them (`blog-reminder.py`, `.claude/blog.md`). Publishing still waits for the user's OK.
+- `HANDOFF.md` changes are excluded from the uncommitted reminder and ride along with the next work PR.
 - Claude files are public now; personal email and local paths were generalized before publishing. Only `.claude/settings.local.json` stays ignored.
 
 ## Plan after that

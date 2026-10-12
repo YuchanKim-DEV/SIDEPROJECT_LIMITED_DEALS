@@ -8,8 +8,9 @@ Read before writing or publishing a post. If reality differs from this file, tel
 - The repo moved to `YuchanKim-DEV/YuchanKim-Dev.github.io`; pushes still work but print a notice.
 
 ## When
-- Write a post only when the user asks, usually together with a commit/push request.
-- One topic per post. The user decides the topics and how to write them.
+- **The trigger is creating a PR.** Right after `gh pr create` succeeds (a hook reminds you), propose post topics for that PR and ask the user how to write them with AskUserQuestion. Also write a post when the user asks.
+- One topic per post. The user decides the topics and how to write them. Do not write anything before they answer.
+- Writing is not publishing: push to the blog repo only after the user has seen the post and says so (`do-not.md` item 3).
 - Source material: the conversation and `learned-topics` in memory.
 
 ## Front matter

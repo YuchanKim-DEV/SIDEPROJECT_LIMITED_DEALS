@@ -14,6 +14,6 @@ This file is only an index. Read each file **when its row applies**, not before.
 | Build, run, test | `.claude/commands.md` |
 | Versions, JDK, DB, environment pitfalls | `.claude/environment.md` |
 | Package structure, layers, design decisions | `.claude/architecture.md` |
-| Blog post (writing, publishing) | `.claude/blog.md` |
+| A PR was just created, or a blog post is requested (writing, publishing) | `.claude/blog.md` |
 | Resuming a session, "where are we" | `.claude/HANDOFF.md` |
 | Editing hooks or permissions | `.claude/hooks/README.md` |
