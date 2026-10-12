@@ -1,1 +1,1 @@
-rootProject.name = "SpringBootMVC"
+rootProject.name = "SIDEPROJECT_LiMITED_DEALS"
