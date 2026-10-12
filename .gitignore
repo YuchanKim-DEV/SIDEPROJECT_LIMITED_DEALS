@@ -37,5 +37,9 @@ out/
 .vscode/
 
 
-###CLUADE CODE###
+### CLAUDE CODE ###
 CLAUDE.md
+claude.md
+cluade.md
+CLAUDE*.txt
+.claude/
