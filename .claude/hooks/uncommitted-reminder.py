@@ -17,7 +17,10 @@ def check(data):
     lines = git_out(project, "status", "--porcelain", "-uall").splitlines()
     if not lines:
         return
-    names = [l[3:].split(" -> ")[-1] for l in lines]
+    # HANDOFF.md is refreshed automatically all the time; it rides along with the next work PR.
+    names = [n for n in (l[3:].split(" -> ")[-1] for l in lines) if n != ".claude/HANDOFF.md"]
+    if not names:
+        return
     shown = ", ".join(names[:MAX_FILES]) + (f", ... (+{len(names) - MAX_FILES})" if len(names) > MAX_FILES else "")
     msg = (f"[uncommitted-reminder] {len(names)} uncommitted file(s): {shown}. "
            "If this prompt starts a different task or the work reached a checkpoint, follow "
