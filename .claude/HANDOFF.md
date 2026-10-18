@@ -13,7 +13,7 @@ Last updated: 2026-10-12
 - Home `~/CLAUDE.md` (merged guidance of LIGIDFPoC, Algorithm, ADJU) was deleted at the user's request, backup included. Other projects no longer get that guidance.
 
 ## Current step
-Claude setup is done (skills are added later, as the project needs them). The Claude files are uploaded in ONE PR: #5 (`chore/claude-setup/2026-10-12`, 4 commits split by nature), waiting for the user to merge it. After the merge: `git checkout main && git pull`, delete the local branch, then plan step 4.
+Claude setup is done and merged (PR #5; skills are added later, as the project needs them). A blog post about it is written but NOT published yet: `_posts/2026-10-12-limited-deals-claude-code-setup.md` in the blog repo, waiting for the user's review and OK to push. Next: plan step 4 (tech stack).
 
 ## Decisions made on the way
 - One PR per purpose, one commit per nature (`docs/github-convention.md` section 3, `.claude/commit-flow.md`).
@@ -27,7 +27,14 @@ Claude setup is done (skills are added later, as the project needs them). The Cl
 
 ## Open items
 - VS Code null analysis popup: user decided to choose Yes, not yet clicked.
-- DB: no datasource configured; choose H2 for local first, PostgreSQL profile later.
+- **Goal (decided 2026-10-12)**: build the backend with the must-have production concerns done deeply: large data volume, no data loss, concurrency, idempotency. Domain: limited-time deals (flash sale).
+- **DB decided: MySQL 8.4.11 (InnoDB, image `mysql:8.4.11`, pinned; never `latest`), run with Docker Compose.** The user pulled the image in Docker Desktop and is about to write `docker-compose.yml` and `.env` (add `.env` to `.gitignore`) by typing the content Claude provided. H2 is not suitable for concurrency study. Still to add: MySQL driver (build.gradle.kts), Docker Compose file, datasource config. `environment.md` still says the DB is open; update it after asking the user.
+- **Roadmap confirmed (A to H, plus step 0 setup)**: kept in `docs/roadmap.md` (the user wants it managed as its own file; update it and its change log when the plan changes). Order: 0 stack setup → A stock concurrency → B idempotency → C large data → D Redis → E events (Kafka + Outbox) → F failure handling → G observability and load tests → H security.
+- **Docker: terminal and compose files first** (with deployment in mind: servers have no GUI). On 2026-10-16 the user reinstalled Docker Desktop and also wants to learn its GUI, so the GUI is fine as a viewer (Containers, Logs). The new install puts the CLI in `~/.docker/bin`, which was not on PATH (`docker: command not found`); fix given: add it to `~/.zshrc` or switch Settings → Advanced to System. A later deployment step (RDS or EC2, profiles `local`/`prod`) may be added to the roadmap as step I.
+- **Step 0 progress (2026-10-18)**: `docker-compose.yml` at the root (user's version: `MYSQL_USER: admin`, volume `mysql_data`, `restart: always`) and `.env` created; `limited-deals-mysql` (8.4.11) is up on 3306 with volume `limited_deals_mysql_data`. Next: user verifies login as `admin`, creates `.env.example`, then propose 2 PRs (roadmap/working-mode docs; step 0 compose + `.gitignore`). After that: MySQL driver, datasource config, Flyway/Testcontainers decision.
+- 2026-10-18: login as `admin` verified. Decisions: tables are made by code, **trying both JPA `ddl-auto` first, then Flyway** to feel the difference. Replies must be short but complete (`answer-style.md`). DBeaver is installed (user connects it themselves).
+- Claude's Bash shell does not load `~/.zshrc`, so `docker` is not on its PATH: use `~/.docker/bin/docker`. Docker Desktop must be running (`open -a Docker`), otherwise `docker.sock` is missing. Never read `.env` (denied by permissions).
+- **Working mode changed (2026-10-12)**: the user does the hands-on work for the project (setup, code, tests); Claude explains, gives hints and steps, checks results, reviews. See `working-rules.md`.
 - First domain idea: `Product` and `Deal` entities with CRUD.
 - External skills surveyed (not installed): revisit `java-springboot` when deciding architecture and a TDD skill when starting tests. Built-in `/code-review`, `/simplify`, `/security-review` already exist.
 - Optional: restrict the GitHub repo to the chosen merge method and auto-delete head branches (Settings).
