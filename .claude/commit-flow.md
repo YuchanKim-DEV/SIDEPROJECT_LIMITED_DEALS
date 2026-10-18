@@ -3,7 +3,7 @@
 How Claude proposes commits and PRs. The rules themselves are in `docs/github-convention.md`; this file is the procedure. If reality differs from this file, tell the user and ask before updating it.
 
 ## Branch first
-When a substantial task (one purpose) starts, create its branch `type/description/YYYY-MM-DD` from an up-to-date `main` **before** changing anything, and work on it. Never create the branch right before pushing. Run `git checkout -b <name>` as its own command (hook gap with `-q -b`).
+When a substantial task (one purpose) starts, create its branch `type/description/YYYY-MM-DD` from an up-to-date `main` **before** changing anything, and work on it. Never create the branch right before pushing. Cleanup and backups: `.claude/branch-care.md`.
 
 ## When to raise it
 - A meaningful checkpoint is reached: a feature and its tests pass (`./gradlew test`), or a docs/config change is complete.

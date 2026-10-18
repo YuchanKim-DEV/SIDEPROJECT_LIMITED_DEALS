@@ -2,7 +2,14 @@
 
 Read only when asked or when resuming a session. Kept current automatically (see working-rules.md).
 
-Last updated: 2026-10-12
+Last updated: 2026-10-18
+
+## Now
+- PR #6 (roadmap, working mode, answer style) and #7 (branch first) are merged; their local branches were cleaned up.
+- Current branch `chore/branch-care/2026-10-18`: cleanup after merge + backup branches (max 10, local) rules, `branch-guard.py` allows `backup/*` and `-D` only for them, `commit-guard.py` `-q -b` fix. Waiting for the user's OK to commit and open the PR.
+- PR ② (`chore/local-mysql/2026-10-18`: `.gitignore` `.env`, `docker-compose.yml`, `.env.example`) waits for the user to create `.env.example`; branch it from `main`.
+- Roadmap blog post written, not published (`_posts/2026-10-18-limited-deals-roadmap.md`); Docker post comes with PR ②.
+- Then: tables by JPA `ddl-auto` first, then Flyway.
 
 ## Done
 - Project skeleton from Spring Initializr (Spring Boot 4.1.1) with a `Member` CRUD slice and a repository test.

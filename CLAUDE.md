@@ -11,6 +11,7 @@ This file is only an index. Read each file **when its row applies**, not before.
 | Start of every session (how to write every reply) | `.claude/answer-style.md` |
 | Before commit, push, PR, merge, git/global config changes, deleting anything, publishing; or when a command is blocked | `.claude/do-not.md` |
 | Branch, commit, PR, merge, issue | `docs/github-convention.md` |
+| A PR was merged (clean up local branches), or before a risky git operation (make a backup) | `.claude/branch-care.md` |
 | A checkpoint is reached, or the user switches tasks with uncommitted changes (propose commits and a PR) | `.claude/commit-flow.md` |
 | What to build next, the learning plan | `docs/roadmap.md` |
 | Build, run, test | `.claude/commands.md` |
