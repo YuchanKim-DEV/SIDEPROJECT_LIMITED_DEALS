@@ -32,6 +32,6 @@ tags: [spring-boot, java, ...]
 - Never add attribution (see CLAUDE.md, Do not 1).
 
 ## Publishing
-1. Show or summarize the post for the user when they ask to review.
+1. **Right after writing a post, ask with AskUserQuestion** whether to publish now (do not just mention "say 올려줘" in a list; the user missed it once, 2026-10-18). Summarize the post in the question if useful.
 2. Commit in the blog repo with `Add post: title` (or `Fix post: ...`) and push to `main` only when asked.
 3. After pushing, check the deploy with `gh run list --repo YuchanKim-DEV/YuchanKim-Dev.github.io --limit 1` and confirm the post appears on the live site.
