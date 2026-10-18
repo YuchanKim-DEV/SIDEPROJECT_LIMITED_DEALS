@@ -3,7 +3,10 @@
     "UserPromptSubmit": [
       {
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/uncommitted-reminder.py\"" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/uncommitted-reminder.py\""
+          }
         ]
       }
     ],
@@ -11,8 +14,14 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-reminder.py\"" },
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/blog-reminder.py\"" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/handoff-reminder.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/blog-reminder.py\""
+          }
         ]
       }
     ],
@@ -20,18 +29,39 @@
       {
         "matcher": "Bash",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/no-attribution.py\"" },
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-guard.py\"" },
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-guard.py\"" },
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/branch-guard.py\"" },
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pr-guard.py\"" },
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/stage-guard.py\"" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/no-attribution.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/commit-guard.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/push-guard.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/branch-guard.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/pr-guard.py\""
+          },
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/stage-guard.py\""
+          }
         ]
       },
       {
         "matcher": "Write|Edit|MultiEdit",
         "hooks": [
-          { "type": "command", "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/blog-guard.py\"" }
+          {
+            "type": "command",
+            "command": "python3 \"$CLAUDE_PROJECT_DIR/.claude/hooks/blog-guard.py\""
+          }
         ]
       }
     ]
@@ -67,7 +97,11 @@
       "Bash(ls:*)",
       "Bash(wc:*)",
       "Bash(date)",
-      "Read(~/Desktop/SIDE_PROJECTS/YuchanKim-DEV.github.io/**)"
+      "Read(~/Desktop/SIDE_PROJECTS/YuchanKim-DEV.github.io/**)",
+      "Bash(git branch -d:*)",
+      "Bash(git branch -D backup/:*)",
+      "Bash(git branch backup/:*)",
+      "Bash(git for-each-ref:*)"
     ],
     "ask": [
       "Bash(git add:*)",
@@ -93,7 +127,6 @@
       "Bash(git rebase:*)",
       "Bash(git filter-branch:*)",
       "Bash(git commit --amend:*)",
-      "Bash(git branch -D:*)",
       "Bash(git config --global:*)",
       "Bash(git config --local:*)",
       "Bash(git config --unset:*)",
