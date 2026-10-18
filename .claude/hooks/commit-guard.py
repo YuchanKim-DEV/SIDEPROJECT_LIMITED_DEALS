@@ -25,7 +25,8 @@ def check(data):
     if subject is not None and not TITLE_RE.match(subject):
         block("commit-guard", f"Commit subject '{subject}' does not match 'type(scope): subject' "
               f"(types: {TYPES.replace('|', ', ')}). See docs/github-convention.md.")
-    creates_branch = re.search(r"\bgit\s+(?:checkout\s+-[bB]|switch\s+-[cC])\b", cmd)
+    # also matches flags before -b, e.g. `git checkout -q -b name`
+    creates_branch = re.search(r"\bgit\s+(?:-C\s+\S+\s+)?(?:checkout|switch)\b[^;&|\n]*?\s-[bBcC]\b", cmd)
     if not creates_branch and current_branch(cmd, cwd) == "main":
         block("commit-guard", "Do not commit on main. Create a work branch first: type/description/YYYY-MM-DD.")
 

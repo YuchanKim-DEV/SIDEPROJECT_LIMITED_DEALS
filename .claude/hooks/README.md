@@ -7,7 +7,7 @@
 | `no-attribution.py` | Bash | no `Co-Authored-By` / "Generated with Claude Code" in `git commit`, `gh pr create/edit` | all repos |
 | `commit-guard.py` | Bash | subject `type(scope): subject`; no commit on `main` | this repo only |
 | `push-guard.py` | Bash | no `-f/--force/--delete/+refspec/:branch`; no direct push to `main` | forms: all repos, main: this repo |
-| `branch-guard.py` | Bash | new branch name `type/description/YYYY-MM-DD` with a real date | this repo only |
+| `branch-guard.py` | Bash | new branch `type/description/YYYY-MM-DD` or `backup/description/YYYY-MM-DD-HHMM` with a real date; `git branch -D` only for `backup/*` | this repo only |
 | `pr-guard.py` | Bash | PR title format; body has the 4 template headings | this repo only |
 | `stage-guard.py` | Bash | no secrets (`.env`, `*.pem`, ...), no `git add -f`, bulk adds checked via `git status` | all repos |
 | `blog-guard.py` | Write/Edit/MultiEdit | files in `_posts/`: no future date, no attribution | blog posts |
