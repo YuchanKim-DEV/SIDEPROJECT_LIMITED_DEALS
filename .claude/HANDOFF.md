@@ -6,8 +6,10 @@ Last updated: 2026-10-18
 
 ## Now
 - PR #6 (roadmap, working mode, answer style) and #7 (branch first) are merged; their local branches were cleaned up.
-- Current branch `chore/branch-care/2026-10-18`: cleanup after merge + backup branches (max 10, local) rules, `branch-guard.py` allows `backup/*` and `-D` only for them, `commit-guard.py` `-q -b` fix. Waiting for the user's OK to commit and open the PR.
-- PR ② (`chore/local-mysql/2026-10-18`: `.gitignore` `.env`, `docker-compose.yml`, `.env.example`) waits for the user to create `.env.example`; branch it from `main`.
+- PR #8 (branch care) and #9 (local MySQL compose + `.env` ignored) are merged; branches cleaned up. Local and remote have only `main`.
+- `.env.example` was not added (the user created only `.env`); decision pending.
+- Blog posts published: roadmap, Docker/MySQL. From now on, ask with the choice UI right after writing a post (`blog.md`, change not committed yet; goes with the next Claude-settings PR).
+- 2026-10-18: the app connects to local MySQL (driver `mysql-connector-j`, datasource in `application.yaml`, password from env `MYSQL_PASSWORD`; run with `set -a; source .env; set +a; ./gradlew bootRun`). H2 is test-only (`src/test/resources/application.yaml`). Tests pass. Next: tables with JPA `ddl-auto`, then Flyway. Later: consider `spring.jpa.open-in-view: false`.
 - Roadmap blog post written, not published (`_posts/2026-10-18-limited-deals-roadmap.md`); Docker post comes with PR ②.
 - Then: tables by JPA `ddl-auto` first, then Flyway.
 
