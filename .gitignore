@@ -41,3 +41,5 @@ out/
 .claude/settings.local.json
 __pycache__/
 *.pyc
+
+.env
