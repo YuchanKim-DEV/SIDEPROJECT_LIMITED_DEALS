@@ -1,4 +1,4 @@
-package com.limiteddealproducts.service;
+package com.limiteddeals.order.service;
 
 public class MemberService {
 }

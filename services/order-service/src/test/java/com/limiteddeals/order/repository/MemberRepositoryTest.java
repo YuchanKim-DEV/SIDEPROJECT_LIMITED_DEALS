@@ -1,6 +1,6 @@
-package com.limiteddealproducts.repository;
+package com.limiteddeals.order.repository;
 
-import com.limiteddealproducts.domain.Member;
+import com.limiteddeals.order.domain.Member;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;

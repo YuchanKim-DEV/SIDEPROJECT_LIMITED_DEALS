@@ -1,4 +1,4 @@
-package com.limiteddealproducts.dto;
+package com.limiteddeals.order.dto;
 
 public class MemberCreateRequest {
 }

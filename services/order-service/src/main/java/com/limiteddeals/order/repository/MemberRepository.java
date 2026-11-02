@@ -1,6 +1,6 @@
-package com.limiteddealproducts.repository;
+package com.limiteddeals.order.repository;
 
-import com.limiteddealproducts.domain.Member;
+import com.limiteddeals.order.domain.Member;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 /**

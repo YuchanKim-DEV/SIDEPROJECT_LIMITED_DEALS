@@ -1,13 +1,13 @@
-package com.limiteddealproducts;
+package com.limiteddeals.order;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 @SpringBootApplication
-public class LimitedDealProductsApplication {
+public class OrderApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(LimitedDealProductsApplication.class, args);
+		SpringApplication.run(OrderApplication.class, args);
 	}
 
 }

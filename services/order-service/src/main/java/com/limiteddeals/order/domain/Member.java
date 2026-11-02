@@ -1,4 +1,4 @@
-package com.limiteddealproducts.domain;
+package com.limiteddeals.order.domain;
 
 import jakarta.persistence.*;
 import lombok.Getter;

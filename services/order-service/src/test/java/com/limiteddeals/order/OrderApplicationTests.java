@@ -1,10 +1,10 @@
-package com.limiteddealproducts;
+package com.limiteddeals.order;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class LimitedDealProductsApplicationTests {
+class OrderApplicationTests {
 
 	@Test
 	void contextLoads() {

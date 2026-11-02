@@ -1,4 +1,4 @@
-package com.limiteddealproducts.controller;
+package com.limiteddeals.order.controller;
 
 public class MemberController {
 }

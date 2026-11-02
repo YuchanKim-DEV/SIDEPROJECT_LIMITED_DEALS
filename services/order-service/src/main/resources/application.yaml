@@ -1,6 +1,8 @@
+server:
+  port: 8082
 spring:
   application:
-    name: limited-deal-products
+    name: order-service
   datasource:
     url: jdbc:mysql://localhost:3306/limited_deals?serverTimezone=UTC
     username: admin
@@ -11,4 +13,3 @@ spring:
     properties:
       hibernate:
         format_sql: true
-      
