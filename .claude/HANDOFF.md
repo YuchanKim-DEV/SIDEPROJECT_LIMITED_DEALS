@@ -4,12 +4,19 @@ Read only when asked or when resuming a session. Kept current automatically (see
 
 Last updated: 2026-10-18
 
+## Direction change (2026-11-02, decided with the user)
+- The user wants **MSA** and an "online open-run" flow: simple test/ops dashboard (no fancy UI), k6 load (10k concurrent, 100k queued), Rate Limit, virtual waiting room with queue numbers (Redis), order with Outbox → Kafka → consumer with Inbox, Grafana/Prometheus/Loki for metrics and logs, later Kubernetes.
+- Analyzed 19 job postings (Toss 4 + Data list, Coupang 8, TVING 3, Daangn 2, KakaoPay 1). Common: Kotlin/Java + Spring Boot, MySQL/JPA, Kafka, Redis, MSA, K8s, AWS; problems: 정합성 (money/state), traffic spikes, incident response/post-mortem, AI tool usage. Toss/KakaoPay default language is Kotlin.
+- Decisions: **keep Java**, **payments/settlement (ledger, reconciliation) later**, **keep the name LIMITED_DEALS**.
+- **Multi-module MSA skeleton built** (branch `build/msa-multi-module/2026-11-02`, by Claude at the user's request): `services/gateway` (8080, Spring Cloud Gateway 2025.1.4), `services/queue-service` (8081, Redis), `services/order-service` (8082, old Member code, MySQL). Redis 8.8.4 added to compose. `./gradlew build` passes (4 tests); runtime + curl routing not verified yet (Docker was off). Details: `architecture.md`, `commands.md`.
+- Still open: roadmap rewrite for MSA. The `ddl-auto` experiment branch was dropped (no commits); redo it inside order-service later.
+
 ## Now
 - PR #6 (roadmap, working mode, answer style) and #7 (branch first) are merged; their local branches were cleaned up.
 - PR #8 (branch care) and #9 (local MySQL compose + `.env` ignored) are merged; branches cleaned up. Local and remote have only `main`.
 - `.env.example` was not added (the user created only `.env`); decision pending.
 - Blog posts published: roadmap, Docker/MySQL. From now on, ask with the choice UI right after writing a post (`blog.md`, change not committed yet; goes with the next Claude-settings PR).
-- 2026-10-18: the app connects to local MySQL (driver `mysql-connector-j`, datasource in `application.yaml`, password from env `MYSQL_PASSWORD`; run with `set -a; source .env; set +a; ./gradlew bootRun`). H2 is test-only (`src/test/resources/application.yaml`). Tests pass. Next: tables with JPA `ddl-auto`, then Flyway. Later: consider `spring.jpa.open-in-view: false`.
+- 2026-10-18: the app connects to local MySQL (driver `mysql-connector-j`, datasource in `application.yaml`, password from env `MYSQL_PASSWORD`; run with `set -a; source .env; set +a; ./gradlew bootRun`). H2 is test-only (`src/test/resources/application.yaml`). Tests pass. PR #10 merged. PR #11 (blog rule: ask to publish with the choice UI) open. Next: tables with JPA `ddl-auto`, then Flyway. Later: consider `spring.jpa.open-in-view: false`.
 - Roadmap blog post written, not published (`_posts/2026-10-18-limited-deals-roadmap.md`); Docker post comes with PR ②.
 - Then: tables by JPA `ddl-auto` first, then Flyway.
 
