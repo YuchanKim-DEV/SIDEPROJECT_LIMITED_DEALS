@@ -1,41 +1,45 @@
+// 루트는 공통 설정만 담는다. 실제 앱은 services/ 아래의 각 모듈이다.
 plugins {
-	java
-	id("org.springframework.boot") version "4.1.1"
-	id("io.spring.dependency-management") version "1.1.7"
+    id("org.springframework.boot") version "4.1.1" apply false
+    id("io.spring.dependency-management") version "1.1.7" apply false
 }
 
-group = "com.limiteddealproducts"
-version = "0.0.1-SNAPSHOT"
+allprojects {
+    group = "com.limiteddeals"
+    version = "0.0.1-SNAPSHOT"
 
-java {
-	toolchain {
-		languageVersion = JavaLanguageVersion.of(25)
-	}
+    repositories {
+        mavenCentral()
+    }
 }
 
-repositories {
-	mavenCentral()
-}
+subprojects {
+    pluginManager.withPlugin("java") {
+        extensions.configure<JavaPluginExtension> {
+            toolchain {
+                languageVersion = JavaLanguageVersion.of(25)
+            }
+        }
 
-dependencies {
-	implementation("org.springframework.boot:spring-boot-starter-actuator")
-	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
-	implementation("org.springframework.boot:spring-boot-starter-validation")
-	implementation("org.springframework.boot:spring-boot-starter-webmvc")
-	compileOnly("org.projectlombok:lombok")
-	developmentOnly("org.springframework.boot:spring-boot-devtools")
-	annotationProcessor("org.projectlombok:lombok")
-	runtimeOnly("com.mysql:mysql-connector-j")
-	testImplementation("org.springframework.boot:spring-boot-starter-actuator-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-data-jpa-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-validation-test")
-	testImplementation("org.springframework.boot:spring-boot-starter-webmvc-test")
-	testCompileOnly("org.projectlombok:lombok")
-	testRuntimeOnly("com.h2database:h2")
-	testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-	testAnnotationProcessor("org.projectlombok:lombok")
-}
+        dependencies {
+            "compileOnly"("org.projectlombok:lombok")
+            "annotationProcessor"("org.projectlombok:lombok")
+            "testCompileOnly"("org.projectlombok:lombok")
+            "testAnnotationProcessor"("org.projectlombok:lombok")
+            "testRuntimeOnly"("org.junit.platform:junit-platform-launcher")
+        }
 
-tasks.withType<Test> {
-	useJUnitPlatform()
+        tasks.withType<Test> {
+            useJUnitPlatform()
+        }
+    }
+
+    // Spring Cloud 버전은 Spring Boot 4.1과 호환되는 2025.1.x로 맞춘다.
+    pluginManager.withPlugin("io.spring.dependency-management") {
+        extensions.configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
+            imports {
+                mavenBom("org.springframework.cloud:spring-cloud-dependencies:2025.1.4")
+            }
+        }
+    }
 }
