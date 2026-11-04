@@ -25,10 +25,9 @@ Packages: `com.limiteddeals.gateway`, `com.limiteddeals.queue`, `com.limiteddeal
 - Share as little as possible between services (event contracts only, if a shared module is ever added). Sharing entities or logic makes a distributed monolith.
 - Services talk over HTTP (through the gateway) or Kafka events (planned: Outbox on the producer, Inbox on the consumer).
 
-## Planned flow (not built yet)
+## Planned flow (not built yet; phases in `docs/roadmap.md`)
 k6 load → gateway (Rate Limit, Redis) → queue-service (admission control: queue number in a Redis Sorted Set, entry token) → order-service (stock lock + order + outbox in one transaction) → Kafka (key = product id) → consumer (Inbox dedup). Metrics and logs: Prometheus, Grafana, Loki. Later: Kubernetes, payments/settlement.
 
 ## Not decided yet
-- Exact roadmap for the MSA version (`docs/roadmap.md` still describes the single-app plan).
 - Whether to split stock out of order-service.
 - Test strategy (Testcontainers for MySQL, Redis, Kafka).

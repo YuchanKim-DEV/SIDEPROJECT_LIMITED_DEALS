@@ -10,7 +10,8 @@ Last updated: 2026-10-18
 - Decisions: **keep Java**, **payments/settlement (ledger, reconciliation) later**, **keep the name LIMITED_DEALS**.
 - **Multi-module MSA skeleton built** (branch `build/msa-multi-module/2026-11-02`, by Claude at the user's request): `services/gateway` (8080, Spring Cloud Gateway 2025.1.4), `services/queue-service` (8081, Redis), `services/order-service` (8082, old Member code, MySQL). Redis 8.8.4 added to compose. `./gradlew build` passes (4 tests); runtime + curl routing not verified yet (Docker was off). PR #12 verified at runtime (gateway on 18080 because another project, `SIDE_PROJECTS/GOV...`, holds 8080) and **merged** by Claude on 2026-11-04. Its remote branch `build/msa-multi-module/2026-11-02` was left (merged without `--delete-branch`).
 - **Role change (2026-11-04)**: Claude does all work, branches, backups, merges; the user reviews. Commit plans and merges still need the user's OK; blog publishing too. `gh pr merge` moved from deny to ask (the user asked). Branch `docs/role-change/2026-11-04`.
-- New plan document drafted in chat (online open-run, MSA diagram, phases 0-9); waiting for the user's confirmation before writing it into `docs/roadmap.md` and `architecture.md`. Details: `architecture.md`, `commands.md`.
+- PR #13 (role change) merged with `--delete-branch`; only `main` remains.
+- The user confirmed the plan (online open-run, MSA, phases 0-9). Written into `docs/roadmap.md` on branch `docs/msa-roadmap/2026-11-04`. **Next: phase 1, stock concurrency in order-service.** Details: `architecture.md`, `commands.md`.
 - Still open: roadmap rewrite for MSA. The `ddl-auto` experiment branch was dropped (no commits); redo it inside order-service later.
 
 ## Now
