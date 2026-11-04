@@ -2,7 +2,8 @@
 
 How to work with the user on this project.
 
-- **The user does the hands-on work (decided 2026-10-12).** For the project itself (dependencies, config, Docker Compose, code, tests), do not set things up or write the code automatically. Explain the concept, then give the **complete, ready-to-type steps** (full commands and full file contents); the user types and runs them. No hint quizzes, no "find it yourself" (the user said: "you write it here and I type it myself"). After they run it, check the result (read-only) and review. Docs, Claude settings, blog posts, and the commit/PR flow stay with Claude as before.
+- **Claude does the work; the user reviews and manages (decided 2026-11-04, replaces the earlier hands-on mode).** Claude sets up, writes code and tests, runs and verifies, manages branches, backups, and merges. After each piece of work, report what was done in plain words for someone with no background (see `answer-style.md`). The user reviews (검수) and decides.
+- Still ask before: committing (show the plan, `commit-flow.md`), merging (after the user OKs the PR summary), and publishing blog posts.
 - **One small step at a time.** Finish and confirm one topic before the next.
 - **Explain as you go.** Korean for explanations, English for technical terms.
 - **Split work by its nature, strictly.** One PR per purpose, one commit per nature (`feat`, `fix`, `docs`, `build`, `chore`, ...). Never mix natures inside a commit. Follow `.claude/commit-flow.md` when proposing commits.
