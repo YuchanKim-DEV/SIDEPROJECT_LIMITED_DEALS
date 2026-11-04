@@ -1,22 +1,23 @@
 #!/usr/bin/env bash
 # 1단계 재고 동시성 실험: 재고 N개 상품에 M명이 동시에 1개씩 주문한다.
-# 사용법: scripts/load/oversell.sh [주소] [재고] [요청 수] [동시 요청 수]
-# 예:     scripts/load/oversell.sh http://localhost:8082 100 1000 200
+# 사용법: scripts/load/oversell.sh [주소] [재고] [요청 수] [동시 요청 수] [방식: naive, atomic]
+# 예:     scripts/load/oversell.sh http://localhost:8082 100 1000 200 atomic
 set -euo pipefail
 
 BASE=${1:-http://localhost:8082}
 STOCK=${2:-100}
 REQUESTS=${3:-1000}
 PARALLEL=${4:-200}
+STRATEGY=${5:-atomic}
 
 ID=$(curl -s -X POST "$BASE/api/products" -H 'Content-Type: application/json' \
   -d "{\"name\":\"동시성 실험\",\"price\":10000,\"stock\":$STOCK}" \
   | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
-echo "상품 id=$ID, 재고=$STOCK, 요청=$REQUESTS, 동시=$PARALLEL"
+echo "상품 id=$ID, 재고=$STOCK, 요청=$REQUESTS, 동시=$PARALLEL, 방식=$STRATEGY"
 
 START=$(date +%s)
 CODES=$(seq "$REQUESTS" | xargs -P "$PARALLEL" -I{} curl -s -o /dev/null -w "%{http_code}\n" \
-  -X POST "$BASE/api/orders" -H 'Content-Type: application/json' \
+  -X POST "$BASE/api/orders?strategy=$STRATEGY" -H 'Content-Type: application/json' \
   -d "{\"productId\":$ID,\"quantity\":1}")
 ELAPSED=$(( $(date +%s) - START ))
 
