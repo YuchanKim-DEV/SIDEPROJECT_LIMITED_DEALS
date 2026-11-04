@@ -111,6 +111,7 @@
       "Bash(git switch:*)",
       "Bash(git merge:*)",
       "Bash(gh pr edit:*)",
+      "Bash(gh pr merge:*)",
       "Bash(./gradlew bootRun:*)",
       "Edit(~/CLAUDE.md)",
       "Write(~/CLAUDE.md)",
@@ -130,7 +131,6 @@
       "Bash(git config --global:*)",
       "Bash(git config --local:*)",
       "Bash(git config --unset:*)",
-      "Bash(gh pr merge:*)",
       "Bash(rm -rf:*)",
       "Read(./.env)",
       "Read(./.env.*)"
