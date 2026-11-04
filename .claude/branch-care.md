@@ -9,7 +9,7 @@ When the user says a PR is merged, or `gh pr list` shows it merged:
 3. Delete local branches whose upstream is gone: `git branch -vv` → for each `[...: gone]` branch, `git branch -d <name>`.
 4. Never force-delete a work branch. If `-d` refuses (not fully merged), keep it and tell the user.
 
-Remote branches are deleted by GitHub on merge; never delete remote branches yourself (`do-not.md` item 2).
+Claude merges with `gh pr merge <n> --merge --delete-branch`, which also deletes the remote head branch. Never delete other remote branches yourself (`do-not.md` item 2).
 
 ## Backups
 **When:** right before anything that could lose or rewrite work: `git stash pop/apply` with possible conflicts, deleting an unmerged branch, switching history (only if the user asked), a large refactor, or any risky operation.

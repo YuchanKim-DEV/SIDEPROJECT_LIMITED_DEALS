@@ -21,7 +21,8 @@ When a substantial task (one purpose) starts, create its branch `type/descriptio
    - Switch to the new task now without committing
    On a task switch, name the new task in the question.
 3. **Only after the user picks the first option**, commit, push, and open the PR (`do-not.md` item 3). Stage files by name, never `git add -A`.
-4. After `gh pr create`, (a) refresh `.claude/HANDOFF.md` and (b) propose blog posts for the PR and ask how to write them (`.claude/blog.md`). Hooks remind you of both. The user merges the PR.
+4. After `gh pr create`, (a) refresh `.claude/HANDOFF.md` and (b) propose blog posts for the PR and ask how to write them (`.claude/blog.md`). Hooks remind you of both.
+5a. **Merge**: report the PR summary (what changed, how it was verified) and ask with AskUserQuestion. After the user OKs, merge with `gh pr merge <n> --merge --delete-branch` (Create a merge commit, deletes the head branch), then clean up per `branch-care.md`.
 5. `HANDOFF.md` changes are not committed on their own; they ride along with the next work PR (as a `docs` commit).
 
 ## Split by nature
