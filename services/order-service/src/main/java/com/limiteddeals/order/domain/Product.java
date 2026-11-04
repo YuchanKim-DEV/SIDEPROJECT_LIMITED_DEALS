@@ -1,5 +1,6 @@
 package com.limiteddeals.order.domain;
 
+import com.limiteddeals.order.exception.OutOfStockException;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -29,5 +30,13 @@ public class Product {
         this.name = name;
         this.price = price;
         this.stock = stock;
+    }
+
+    /** 재고를 줄인다. 남은 재고보다 많이 사려고 하면 거절한다. */
+    public void decreaseStock(int quantity) {
+        if (stock < quantity) {
+            throw new OutOfStockException(id, stock, quantity);
+        }
+        stock -= quantity;
     }
 }
