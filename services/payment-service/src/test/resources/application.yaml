@@ -1,0 +1,16 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:payment;MODE=MySQL
+  kafka:
+    admin:
+      auto-create: false
+    listener:
+      auto-startup: false   # 테스트는 Kafka 없이 핸들러를 직접 부른다
+limited-deals:
+  outbox:
+    relay-enabled: false
+  payment:
+    reconcile-interval-ms: 3600000   # 테스트 중 자동 대사가 끼어들지 않게
+    reconcile-open-after-seconds: 0
+    pg:
+      latency-ms: 0
