@@ -29,7 +29,9 @@
 
 <div class="grid">
   <section>
-    <h2>① 한정판 상품 만들기</h2>
+    <h2>① 한정판 상품 만들기 (관리자)</h2>
+    <label>관리자 비밀번호 (게이트웨이를 ADMIN_PASSWORD로 띄웠을 때)</label><input id="apw" type="password">
+    <button onclick="adminLogin()">관리자 로그인</button>
     <label>이름</label><input id="pname" value="한정판 스니커즈">
     <label>재고</label><input id="pstock" type="number" value="100">
     <button onclick="createProduct()">만들기</button>
@@ -45,10 +47,11 @@
     <div id="state" class="big">대기 전</div>
     <div id="detail" class="sub"></div>
     <button id="buy" onclick="buy()" disabled>구매하기</button>
+    <button id="check" onclick="checkOrder()" disabled>내 주문 조회 (결제 상태)</button>
   </section>
 
   <section>
-    <h2>③ 몰려드는 사람들 (시뮬레이션)</h2>
+    <h2>③ 몰려드는 사람들 (시뮬레이션, 관리자)</h2>
     <label>가상 사용자 수</label><input id="simUsers" type="number" value="10000">
     <button onclick="simulate()">한꺼번에 줄 세우기</button>
     <div>대기 <span class="big" id="waiting">-</span> 명 · 입장 <span id="admitted">-</span> 명</div>
@@ -65,18 +68,35 @@
 const $ = id => document.getElementById(id);
 const log = msg => { $("log").textContent = new Date().toLocaleTimeString() + "  " + msg + "\n" + $("log").textContent; };
 $("uid").value = "user-" + Math.random().toString(36).slice(2, 8);
-let token = null, source = null, statsTimer = null;
+let token = null, source = null, statsTimer = null, orderId = null;
+let userJwt = null, userJwtFor = null, adminJwt = null;   // 로그인 토큰(JWT). 게이트웨이가 확인하고 X-User-Id를 붙여 준다
 
-async function call(method, url, body, headers = {}) {
-  const res = await fetch(url, { method, headers: { "Content-Type": "application/json", ...headers }, body: body && JSON.stringify(body) });
+async function call(method, url, body, headers = {}, jwt = userJwt) {
+  const auth = jwt ? { Authorization: "Bearer " + jwt } : {};
+  const res = await fetch(url, { method, headers: { "Content-Type": "application/json", ...auth, ...headers }, body: body && JSON.stringify(body) });
   const text = await res.text();
   let data; try { data = JSON.parse(text); } catch { data = text; }
   log(`${method} ${url} → ${res.status} ${typeof data === "string" ? data : JSON.stringify(data)}`);
   return { status: res.status, data, headers: res.headers };
 }
 
+async function adminLogin() {
+  const r = await call("POST", "/api/auth/admin-login", { password: $("apw").value }, {}, null);
+  if (r.status === 200) adminJwt = r.data.accessToken;
+}
+
+async function userLogin() {   // 개발용 로그인: 사용자 id만으로 토큰을 받는다(DEV_LOGIN_ENABLED=true)
+  const uid = $("uid").value;
+  if (userJwt && userJwtFor === uid) return true;
+  const r = await call("POST", "/api/auth/dev-login", { userId: uid }, {}, null);
+  if (r.status !== 200) return false;
+  userJwt = r.data.accessToken; userJwtFor = uid;
+  return true;
+}
+
 async function createProduct() {
-  const r = await call("POST", "/api/products", { name: $("pname").value, price: 199000, stock: +$("pstock").value });
+  if (!adminJwt) return log("먼저 관리자 로그인을 하세요");
+  const r = await call("POST", "/api/products", { name: $("pname").value, price: 199000, stock: +$("pstock").value }, {}, adminJwt);
   if (r.status === 201) { $("pid").value = r.data.id; $("stock").textContent = r.data.stock; startStats(); }
 }
 
@@ -105,26 +125,39 @@ function render(s) {
 async function enterQueue() {
   const pid = $("pid").value, uid = $("uid").value;
   if (!pid) return log("먼저 상품 id를 정하세요");
-  const r = await call("POST", `/api/queue/${pid}/enter`, null, { "X-User-Id": uid });
+  if (!await userLogin()) return;
+  const r = await call("POST", `/api/queue/${pid}/enter`);
   if (r.status !== 200) return;
   render(r.data);
   if (source) source.close();
-  source = new EventSource(`/api/queue/${pid}/stream?userId=${encodeURIComponent(uid)}`);
+  source = new EventSource(`/api/queue/${pid}/stream?access_token=${encodeURIComponent(userJwt)}`);
   source.addEventListener("status", e => { const s = JSON.parse(e.data); render(s); if (s.state === "ADMITTED") source.close(); });
   startStats();
 }
 
 async function buy() {
   const r = await call("POST", "/api/orders", { productId: +$("pid").value, quantity: 1 },
-    { "X-User-Id": $("uid").value, "X-Entry-Token": token || "", "Idempotency-Key": crypto.randomUUID() });
-  if (r.status === 201) { $("state").textContent = "구매 완료"; $("buy").disabled = true; $("stock").textContent = r.data.remainingStock; }
+    { "X-Entry-Token": token || "", "Idempotency-Key": crypto.randomUUID() });
+  if (r.status === 201) {
+    $("state").textContent = "주문 접수 (결제 중)"; $("buy").disabled = true; $("stock").textContent = r.data.remainingStock;
+    orderId = r.data.orderId; $("check").disabled = false; setTimeout(checkOrder, 1500);
+  }
   else if (r.status === 409) { $("state").textContent = "품절"; $("state").className = "big bad"; }
+}
+
+async function checkOrder() {   // 결제 서버가 결과를 보내면 PAID(확정) 또는 CANCELLED(취소)
+  const r = await call("GET", `/api/orders/${orderId}`);
+  if (r.status !== 200) return;
+  const label = { PENDING_PAYMENT: "결제 중", PAID: "구매 확정", CANCELLED: "결제 실패, 주문 취소" }[r.data.status] || r.data.status;
+  $("state").textContent = label;
+  $("state").className = "big " + (r.data.status === "PAID" ? "ok" : r.data.status === "CANCELLED" ? "bad" : "warn");
 }
 
 async function simulate() {
   const pid = $("pid").value;
   if (!pid) return log("먼저 상품 id를 정하세요");
-  await call("POST", `/api/queue/${pid}/simulate?users=${+$("simUsers").value}`);
+  if (!adminJwt) return log("시뮬레이션은 관리자 기능입니다. 먼저 관리자 로그인을 하세요");
+  await call("POST", `/api/queue/${pid}/simulate?users=${+$("simUsers").value}`, null, {}, adminJwt);
   startStats();
 }
 
