@@ -4,6 +4,8 @@ spring:
   kafka:
     admin:
       auto-create: false   # 테스트는 Kafka 없이 돈다
+    listener:
+      auto-startup: false  # 결제 결과 리스너도 띄우지 않고, 핸들러를 직접 부른다
 limited-deals:
   outbox:
     relay-enabled: false   # Outbox에 쌓이는지만 확인하고 실제 발행은 하지 않는다

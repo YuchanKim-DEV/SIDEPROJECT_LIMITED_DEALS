@@ -24,13 +24,27 @@ public class Order {
     @Column(length = 50)
     private String userId;
 
+    /** 결제할 금액(상품 가격 × 수량). 7단계 이전 주문에는 없다. */
+    private Long amount;
+
+    /** 7단계 이전 주문에는 없다(결제 없이 바로 확정되던 때). */
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private OrderStatus status;
+
     public Order(Long productId, int quantity) {
         this(productId, quantity, null);
     }
 
     public Order(Long productId, int quantity, String userId) {
+        this(productId, quantity, userId, null);
+    }
+
+    public Order(Long productId, int quantity, String userId, Long amount) {
         this.productId = productId;
         this.quantity = quantity;
         this.userId = userId;
+        this.amount = amount;
+        this.status = OrderStatus.PENDING_PAYMENT;
     }
 }
