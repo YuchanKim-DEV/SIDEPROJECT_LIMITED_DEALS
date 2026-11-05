@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 1단계 재고 동시성 실험: 재고 N개 상품에 M명이 동시에 1개씩 주문한다.
-# 사용법: scripts/load/oversell.sh [주소] [재고] [요청 수] [동시 요청 수] [방식: naive, atomic]
+# 사용법: scripts/load/oversell.sh [주소] [재고] [요청 수] [동시 요청 수] [방식: naive, atomic, pessimistic, optimistic]
 # 예:     scripts/load/oversell.sh http://localhost:8082 100 1000 200 atomic
 set -euo pipefail
 
@@ -27,7 +27,8 @@ LEFT=$(curl -s "$BASE/api/products/$ID" | python3 -c "import sys,json;print(json
 
 echo "주문 성공(201): $SUCCESS"
 echo "품절 거절(409): $REJECTED"
-echo "기타 응답:      $(( REQUESTS - SUCCESS - REJECTED ))"
+OTHERS=$(grep -vE '^(201|409)$' <<<"$CODES" | sort | uniq -c | awk '{printf "%s×%s ", $2, $1}' || true)
+echo "기타 응답:      $(( REQUESTS - SUCCESS - REJECTED )) ${OTHERS:+(상태 코드: $OTHERS)}"
 echo "남은 재고:      $LEFT"
 echo "초과 판매:      $(( SUCCESS - (STOCK - LEFT) > 0 ? SUCCESS - (STOCK - LEFT) : 0 ))건 (성공 주문 - 실제로 줄어든 재고)"
 echo "걸린 시간:      ${ELAPSED}초"
