@@ -2,7 +2,7 @@
 
 Read only when asked or when resuming a session. Kept current automatically (see working-rules.md).
 
-Last updated: 2026-10-18
+Last updated: 2026-11-05
 
 ## Direction change (2026-11-02, decided with the user)
 - The user wants **MSA** and an "online open-run" flow: simple test/ops dashboard (no fancy UI), k6 load (10k concurrent, 100k queued), Rate Limit, virtual waiting room with queue numbers (Redis), order with Outbox → Kafka → consumer with Inbox, Grafana/Prometheus/Loki for metrics and logs, later Kubernetes.
@@ -15,9 +15,9 @@ Last updated: 2026-10-18
 - Still open: roadmap rewrite for MSA. The `ddl-auto` experiment branch was dropped (no commits); redo it inside order-service later.
 
 ## Autonomous build (2026-11-05, the user asked: build everything locally, no questions, report at the end; no merges, no blog until review)
-- Stacked PRs: #15 phase 1 (stock concurrency) ← #16 phase 2 (idempotency) ← phase 3 (waiting room, branch `feat/waiting-room/2026-11-05`). Merge in order after the user's review.
-- Done so far: phases 1-3 with tests (23) and experiments `docs/experiments/01..03`. Gateway moved to port 8000. `scripts/run-local.sh start|stop`.
-- Next: phase 4 Kafka (outbox/inbox/DLQ, notification consumer), 5 resilience (gateway 500→503 on dead upstream, circuit breaker on entry-token check), 6 observability (Prometheus/Grafana/Loki, k6), 7 Dockerfiles + compose for apps + K8s manifests, then `docs/design-decisions.md` (answers: why Kafka, duplicates, consumer failure, Redis vs DB mismatch, 10x traffic), then blog drafts.
+- Stacked PRs, merge in order after the user's review: #15 phase 1 (stock) ← #16 phase 2 (idempotency) ← #17 phase 3 (waiting room) ← #18 phase 4 (Kafka outbox/inbox/DLT) ← #19 phase 5 (resilience) ← phase 6 (observability, branch `feat/observability/2026-11-05`).
+- Done: phases 1-6 with tests and experiments `docs/experiments/01..06`. Phase 6 found: one hot row caps at ~200-345 orders/s, a bigger pool is worse, 10 rows ~590/s; Docker k6 distorts; the hidden Spring Cloud CB bulkhead (25 concurrent) caused 503s, turned off. Open-run 1,000 users / stock 100 → 100 bought, 900 sold out.
+- Next: phase 7 Dockerfiles + compose app profile + K8s manifests, phase 8 payments/settlement, phase 9 security (JWT), then `docs/design-decisions.md` (why Kafka, duplicates, consumer failure, Redis vs DB mismatch, 10x traffic), then blog drafts (not published).
 
 ## Now
 - PR #6 (roadmap, working mode, answer style) and #7 (branch first) are merged; their local branches were cleaned up.

@@ -1,5 +1,8 @@
 server:
   port: 8082
+  tomcat:
+    mbeanregistry:
+      enabled: true   # 바쁜 요청 처리 스레드 수를 지표로 보기 위해
 spring:
   application:
     name: order-service
@@ -16,6 +19,14 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  cloud:
+    circuitbreaker:
+      bulkhead:
+        resilience4j:
+          # Spring Cloud CircuitBreaker는 기본으로 "동시 호출 25개" 제한(벌크헤드)을 몰래 함께 건다.
+          # 입장권 확인 호출이 동시에 25개를 넘으면 대기열 서버가 멀쩡해도 즉시 실패(503)한다(실험 06).
+          # 느린 호출은 응답 시간 제한(500ms)과 회로가 이미 끊어 주므로 끈다.
+          enabled: false
   kafka:
     bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
     producer:
@@ -44,3 +55,9 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}   # Grafana에서 서버별로 나눠 보기 위한 표시
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true                # p95, p99 응답 시간을 계산할 수 있게 구간별로 센다

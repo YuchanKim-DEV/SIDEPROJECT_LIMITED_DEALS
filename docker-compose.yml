@@ -46,6 +46,44 @@ services:
     volumes:
       - kafka_data:/var/lib/kafka/data
 
+  # ---- 관측 도구 (6단계) ----
+  prometheus:
+    image: prom/prometheus:v3.15.1
+    container_name: limited-deals-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+  loki:
+    image: grafana/loki:3.7.9
+    container_name: limited-deals-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  grafana:
+    image: grafana/grafana:13.0.12
+    container_name: limited-deals-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # 로컬 학습용: 로그인 없이 관리자 권한으로 연다. 외부에 열 때는 반드시 끈다
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+    volumes:
+      - ./infra/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./infra/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+      - loki
+
 volumes:
   mysql_data:
   redis_data:

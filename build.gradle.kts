@@ -34,6 +34,14 @@ subprojects {
         }
     }
 
+    // 모든 서버 공통 관측 도구: Prometheus 지표 노출, Loki로 로그 보내기.
+    pluginManager.withPlugin("org.springframework.boot") {
+        dependencies {
+            "runtimeOnly"("io.micrometer:micrometer-registry-prometheus")
+            "implementation"("com.github.loki4j:loki-logback-appender:2.1.0")
+        }
+    }
+
     // Spring Cloud 버전은 Spring Boot 4.1과 호환되는 2025.1.x로 맞춘다.
     pluginManager.withPlugin("io.spring.dependency-management") {
         extensions.configure<io.spring.gradle.dependencymanagement.dsl.DependencyManagementExtension> {
