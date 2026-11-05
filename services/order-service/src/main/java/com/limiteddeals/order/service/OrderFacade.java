@@ -1,5 +1,6 @@
 package com.limiteddeals.order.service;
 
+import com.limiteddeals.order.client.EntryTokenVerifier;
 import com.limiteddeals.order.dto.OrderCreateRequest;
 import com.limiteddeals.order.dto.OrderResponse;
 import com.limiteddeals.order.dto.PlacedOrder;
@@ -26,9 +27,26 @@ import java.util.function.Supplier;
 public class OrderFacade {
 
     private final OrderService orderService;
+    private final EntryTokenVerifier entryTokenVerifier;
 
     @Value("${limited-deals.order.optimistic.max-attempts:50}")
     private int maxAttempts;
+
+    /** true면 대기열 입장권이 있어야 주문할 수 있다. 1·2단계 실험(대기열 없이 직접 주문)을 위해 기본은 false. */
+    @Value("${limited-deals.order.entry-token.required:false}")
+    private boolean entryTokenRequired;
+
+    /**
+     * 오픈런 전체 흐름의 주문 입구: 입장권 확인(트랜잭션 밖, 네트워크 호출) → 멱등 주문.
+     * 입장권 확인을 트랜잭션 밖에서 하는 이유: 네트워크를 기다리는 동안 DB 커넥션을 붙잡지 않기 위해서다.
+     */
+    public PlacedOrder placeWithEntryCheck(OrderCreateRequest request, StockStrategy strategy, String idempotencyKey,
+                                           String userId, String entryToken) {
+        if (entryTokenRequired) {
+            entryTokenVerifier.verify(request.productId(), userId, entryToken);
+        }
+        return place(request, strategy, idempotencyKey);
+    }
 
     /** 멱등 키 없이 주문한다. */
     public OrderResponse place(OrderCreateRequest request, StockStrategy strategy) {
