@@ -1,0 +1,33 @@
+server:
+  port: 8083
+spring:
+  application:
+    name: notification-service
+  datasource:
+    # 로컬에서는 DB를 하나 함께 쓰고 테이블만 나눈다(notification_*). 운영에서는 서비스마다 DB를 분리한다.
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/limited_deals?serverTimezone=UTC
+    username: admin
+    password: ${MYSQL_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      group-id: notification-service
+      auto-offset-reset: earliest   # 처음 붙을 때는 쌓여 있는 이벤트를 처음부터 읽는다
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:   # DLT로 옮길 때 쓴다
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+limited-deals:
+  notification:
+    # 실험용: 이 상품들의 이벤트는 처리할 때마다 실패한다(DLQ 실험). 예: FAILING_PRODUCT_IDS=999
+    failing-product-ids: ${FAILING_PRODUCT_IDS:}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
