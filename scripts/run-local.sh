@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# 로컬에서 서버 3개를 jar로 띄우거나 끈다. 로그는 build/run-logs/에 남는다.
+# 로컬에서 서버 4개(gateway, queue, order, notification)를 jar로 띄우거나 끈다. 로그는 build/run-logs/에 남는다.
 # 사용법: scripts/run-local.sh start [order-service에 줄 추가 옵션...]
 #         scripts/run-local.sh stop
 # 예:     ENTRY_TOKEN_REQUIRED=true scripts/run-local.sh start --spring.jpa.show-sql=false
@@ -23,8 +23,9 @@ case "${1:-}" in
     export MYSQL_PASSWORD="${MYSQL_PASSWORD:-$("$DOCKER" exec limited-deals-mysql printenv MYSQL_PASSWORD)}"
     start queue-service
     start order-service "$@"
+    start notification-service
     start gateway
-    for name in queue-service order-service gateway; do
+    for name in queue-service order-service notification-service gateway; do
       for _ in $(seq 1 90); do
         grep -qE "Started [A-Za-z]+Application" "$LOGS/$name.log" 2>/dev/null && { echo "$name 시작됨"; break; }
         grep -qE "APPLICATION FAILED|Application run failed" "$LOGS/$name.log" 2>/dev/null && { echo "$name 실패 (로그: $LOGS/$name.log)"; exit 1; }
@@ -33,10 +34,25 @@ case "${1:-}" in
     done
     ;;
   stop)
-    for name in gateway order-service queue-service; do
+    for name in gateway notification-service order-service queue-service; do
       [ -f "$LOGS/$name.pid" ] && kill "$(cat "$LOGS/$name.pid")" 2>/dev/null && echo "$name 종료" || true
       rm -f "$LOGS/$name.pid"
     done
     ;;
-  *) echo "사용법: $0 start|stop"; exit 1 ;;
+  restart)   # 서버 하나만 다시 띄운다. 예: FAILING_PRODUCT_IDS=7 scripts/run-local.sh restart notification-service
+    name=$2; shift 2
+    export MYSQL_PASSWORD="${MYSQL_PASSWORD:-$("$DOCKER" exec limited-deals-mysql printenv MYSQL_PASSWORD)}"
+    [ -f "$LOGS/$name.pid" ] && kill "$(cat "$LOGS/$name.pid")" 2>/dev/null || true
+    sleep 2
+    start "$name" "$@"
+    for _ in $(seq 1 90); do
+      grep -qE "Started [A-Za-z]+Application" "$LOGS/$name.log" 2>/dev/null && { echo "$name 다시 시작됨"; exit 0; }
+      sleep 1
+    done
+    echo "$name 시작 실패"; exit 1
+    ;;
+  kill)   # 실험용: 서버 하나를 끈다
+    [ -f "$LOGS/$2.pid" ] && kill "$(cat "$LOGS/$2.pid")" 2>/dev/null && rm -f "$LOGS/$2.pid" && echo "$2 종료"
+    ;;
+  *) echo "사용법: $0 start|stop|restart <서버>|kill <서버>"; exit 1 ;;
 esac
