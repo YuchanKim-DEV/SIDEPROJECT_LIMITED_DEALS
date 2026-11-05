@@ -45,7 +45,7 @@ public class OrderFacade {
         if (entryTokenRequired) {
             entryTokenVerifier.verify(request.productId(), userId, entryToken);
         }
-        return place(request, strategy, idempotencyKey);
+        return place(request, strategy, idempotencyKey, userId);
     }
 
     /** 멱등 키 없이 주문한다. */
@@ -58,13 +58,18 @@ public class OrderFacade {
      * 같은 키로 다시 오면 주문을 새로 만들지 않고 처음 결과를 replayed=true로 돌려준다.
      */
     public PlacedOrder place(OrderCreateRequest request, StockStrategy strategy, String idempotencyKey) {
+        return place(request, strategy, idempotencyKey, null);
+    }
+
+    public PlacedOrder place(OrderCreateRequest request, StockStrategy strategy, String idempotencyKey, String userId) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
-            return new PlacedOrder(place(request, strategy), false);
+            return new PlacedOrder(withOptimisticRetry(request, strategy,
+                    () -> orderService.place(request, strategy, userId)), false);
         }
         String hash = requestHash(request);
         try {
             OrderResponse created = withOptimisticRetry(request, strategy,
-                    () -> orderService.placeWithIdempotencyKey(idempotencyKey, hash, request, strategy));
+                    () -> orderService.placeWithIdempotencyKey(idempotencyKey, hash, request, strategy, userId));
             return new PlacedOrder(created, false);
         } catch (DataIntegrityViolationException duplicateKey) {
             return new PlacedOrder(orderService.findReplay(idempotencyKey, hash), true);
