@@ -1,0 +1,32 @@
+# 대기열 서버만 부하에 따라 2~6대로 늘리고 줄인다. CPU 사용률(requests 기준) 60%를 넘으면 늘린다.
+# 대기열 서버는 상태를 Redis에 두어서 몇 대든 같은 대기열을 본다. 입장 처리는 Redis 락으로 한 대만 한다.
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: queue-service
+  namespace: limited-deals
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: queue-service
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+  behavior:
+    # JVM은 뜨는 동안 CPU를 많이 쓴다. HPA가 이것을 부하로 보고 바로 늘리면, 새 파드도 뜨면서 CPU를 쓰고
+    # 노드 자원이 모자라 재시작 → 또 늘림이 반복됐다(실험 07). 늘릴 때도 1분 지켜보고, 1분에 1대씩만 늘린다.
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+        - type: Pods
+          value: 1
+          periodSeconds: 60
+    scaleDown:
+      stabilizationWindowSeconds: 60   # 줄일 때는 1분 지켜보고 줄인다(늘렸다 줄였다 반복 방지)
