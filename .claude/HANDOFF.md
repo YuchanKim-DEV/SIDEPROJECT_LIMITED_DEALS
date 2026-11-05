@@ -15,9 +15,10 @@ Last updated: 2026-11-05
 - Still open: roadmap rewrite for MSA. The `ddl-auto` experiment branch was dropped (no commits); redo it inside order-service later.
 
 ## Autonomous build (2026-11-05, the user asked: build everything locally, no questions, report at the end; no merges, no blog until review)
-- Stacked PRs, merge in order after the user's review: #15 phase 1 (stock) ← #16 phase 2 (idempotency) ← #17 phase 3 (waiting room) ← #18 phase 4 (Kafka outbox/inbox/DLT) ← #19 phase 5 (resilience) ← phase 6 (observability, branch `feat/observability/2026-11-05`).
-- Done: phases 1-6 with tests and experiments `docs/experiments/01..06`. Phase 6 found: one hot row caps at ~200-345 orders/s, a bigger pool is worse, 10 rows ~590/s; Docker k6 distorts; the hidden Spring Cloud CB bulkhead (25 concurrent) caused 503s, turned off. Open-run 1,000 users / stock 100 → 100 bought, 900 sold out.
-- Next: phase 7 Dockerfiles + compose app profile + K8s manifests, phase 8 payments/settlement, phase 9 security (JWT), then `docs/design-decisions.md` (why Kafka, duplicates, consumer failure, Redis vs DB mismatch, 10x traffic), then blog drafts (not published).
+- Stacked PRs, merge in order after the user's review: #15 phase 1 (stock) ← #16 phase 2 (idempotency) ← #17 phase 3 (waiting room) ← #18 phase 4 (Kafka outbox/inbox/DLT) ← #19 phase 5 (resilience) ← #20 phase 6 (observability) ← phases 7-9 (branch `feat/deploy-payment-security/2026-11-05`: containers + K8s, payment-service Saga/ledger/reconciliation, gateway JWT).
+- Done: phases 1-9, 50 tests, experiments `docs/experiments/01..09`, answers to the mentor's questions in `docs/design-decisions.md`. Grafana has payment and security rows.
+- Findings to remember: one hot row caps orders (~200-345/s); a bigger pool is worse; hidden CB bulkhead; sold-out requests queued on the row lock (fixed: sold-out fast path + stock UPDATE last + OSIV off); HPA scaled during JVM startup (fixed: scale-up policy); the 8GB laptop cannot run kind + 5 JVMs + infra comfortably.
+- Next (waiting for the user): review and merge the stacked PRs in order; blog drafts for phases 1-9 (collected, not published); later: AWS deploy (user sets up the environment), measurements on separate machines, OpenTelemetry.
 
 ## Now
 - PR #6 (roadmap, working mode, answer style) and #7 (branch first) are merged; their local branches were cleaned up.
