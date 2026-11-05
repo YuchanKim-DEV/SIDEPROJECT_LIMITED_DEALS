@@ -8,7 +8,7 @@
     "to": "now"
   },
   "schemaVersion": 39,
-  "version": 1,
+  "version": 2,
   "tags": [
     "limited-deals"
   ],
@@ -38,7 +38,7 @@
       "gridPos": {
         "x": 0,
         "y": 1,
-        "w": 6,
+        "w": 4,
         "h": 4
       },
       "fieldConfig": {
@@ -77,9 +77,9 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 6,
+        "x": 4,
         "y": 1,
-        "w": 6,
+        "w": 4,
         "h": 4
       },
       "fieldConfig": {
@@ -118,9 +118,9 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 12,
+        "x": 8,
         "y": 1,
-        "w": 6,
+        "w": 4,
         "h": 4
       },
       "fieldConfig": {
@@ -159,9 +159,9 @@
         "uid": "prometheus"
       },
       "gridPos": {
-        "x": 18,
+        "x": 12,
         "y": 1,
-        "w": 6,
+        "w": 4,
         "h": 4
       },
       "fieldConfig": {
@@ -187,6 +187,101 @@
             "uid": "prometheus"
           },
           "expr": "sum(resilience4j_circuitbreaker_state{state=\"open\"})"
+        }
+      ]
+    },
+    {
+      "id": 21,
+      "type": "stat",
+      "title": "결제 미완료",
+      "description": "REQUESTED + UNKNOWN. 30초 넘게 남으면 대사가 PG에 물어 끝낸다",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(payment_open)"
+        }
+      ]
+    },
+    {
+      "id": 22,
+      "type": "stat",
+      "title": "대사 불일치",
+      "description": "마지막 대사에서 어긋난 건수. 0이어야 한다",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 20,
+        "y": 1,
+        "w": 4,
+        "h": 4
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "value",
+        "graphMode": "area"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(payment_reconciliation_mismatches)"
         }
       ]
     },
@@ -722,13 +817,309 @@
       ]
     },
     {
+      "id": 23,
+      "type": "row",
+      "title": "결제와 정산 (8단계, Saga)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 48,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 24,
+      "type": "timeseries",
+      "title": "결제 결과 (초당)",
+      "description": "누가 끝냈는지: consumer(바로) / reconciliation(대사가 PG에 물어서)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 49,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (result, by) (rate(payment_finished_total[1m]))",
+          "legendFormat": "{{result}} · {{by}}"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(rate(payment_unknown_total[1m]))",
+          "legendFormat": "PG 응답 없음 (UNKNOWN)"
+        }
+      ]
+    },
+    {
+      "id": 25,
+      "type": "timeseries",
+      "title": "주문 마무리 (초당)",
+      "description": "결제 결과를 받은 주문: PAID(확정), CANCELLED(취소 + 재고 복구), duplicate(이미 처리됨)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 49,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (result) (rate(order_payment_result_total[1m]))",
+          "legendFormat": "{{result}}"
+        }
+      ]
+    },
+    {
+      "id": 26,
+      "type": "timeseries",
+      "title": "결제 미완료와 대사 불일치",
+      "description": "미완료는 잠깐 생겼다 사라져야 하고, 불일치는 항상 0이어야 한다",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 57,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(payment_open)",
+          "legendFormat": "결제 미완료"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum(payment_reconciliation_mismatches)",
+          "legendFormat": "대사 불일치"
+        }
+      ]
+    },
+    {
+      "id": 27,
+      "type": "timeseries",
+      "title": "Outbox 대기 (서버별)",
+      "description": "Kafka로 아직 못 보낸 이벤트. order-service(주문 접수), payment-service(결제 결과)",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 57,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (application) (outbox_pending)",
+          "legendFormat": "{{application}}"
+        }
+      ]
+    },
+    {
+      "id": 28,
+      "type": "row",
+      "title": "보안 (9단계)",
+      "collapsed": false,
+      "gridPos": {
+        "x": 0,
+        "y": 65,
+        "w": 24,
+        "h": 1
+      },
+      "panels": []
+    },
+    {
+      "id": 29,
+      "type": "timeseries",
+      "title": "거절된 요청 (게이트웨이, 초당)",
+      "description": "401: 토큰 없음·위조·만료, 403: 권한 부족(관리자 기능), 404: 서버끼리만 쓰는 경로",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 66,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (status) (rate(http_server_requests_seconds_count{application=\"gateway\", status=~\"401|403\"}[1m]))",
+          "legendFormat": "{{status}}"
+        }
+      ]
+    },
+    {
+      "id": 30,
+      "type": "timeseries",
+      "title": "로그인 발급 (초당)",
+      "description": "개발용 로그인(dev-login)과 관리자 로그인",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 66,
+        "w": 12,
+        "h": 8
+      },
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (uri, status) (rate(http_server_requests_seconds_count{application=\"gateway\", uri=~\"/api/auth/.*\"}[1m]))",
+          "legendFormat": "{{uri}} {{status}}"
+        }
+      ]
+    },
+    {
       "id": 19,
       "type": "row",
       "title": "로그",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 48,
+        "y": 74,
         "w": 24,
         "h": 1
       },
@@ -744,7 +1135,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 49,
+        "y": 75,
         "w": 24,
         "h": 10
       },

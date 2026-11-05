@@ -40,4 +40,13 @@ public interface ProductRepository extends JpaRepository<Product, Long> {
     @Query("update Product p set p.stock = :newStock, p.version = p.version + 1 where p.id = :id and p.version = :expectedVersion")
     int updateStockIfVersionMatches(@Param("id") Long id, @Param("newStock") int newStock,
                                     @Param("expectedVersion") long expectedVersion);
+
+    /** 보상(Saga): 결제가 실패한 주문의 재고를 되돌린다. */
+    @Modifying(clearAutomatically = true)
+    @Query("update Product p set p.stock = p.stock + :quantity where p.id = :id")
+    int increaseStock(@Param("id") Long id, @Param("quantity") int quantity);
+
+    /** 품절 빠른 거절용: 재고 숫자만 잠그지 않고 읽는다. */
+    @Query("select p.stock from Product p where p.id = :id")
+    Optional<Integer> findStockById(@Param("id") Long id);
 }

@@ -1,0 +1,23 @@
+# 서버들이 함께 쓰는 접속 정보. MySQL, Redis, Kafka는 클러스터 밖(docker compose)에 있다.
+# 운영에서 RDS, ElastiCache, MSK 같은 관리형 서비스를 밖에 두는 것과 같은 모양이다.
+# kind 노드를 compose 네트워크에 연결해서 mysql, redis, kafka 이름으로 찾아간다(scripts/deploy/k8s.sh).
+# 비밀번호는 여기 두지 않는다. 배포 스크립트가 Secret(limited-deals-db)을 따로 만든다.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: limited-deals-config
+  namespace: limited-deals
+data:
+  MYSQL_HOST: mysql
+  REDIS_HOST: redis
+  KAFKA_BOOTSTRAP: kafka:29092
+  QUEUE_SERVICE_URL: http://queue-service:8081
+  ORDER_SERVICE_URL: http://order-service:8082
+  NOTIFICATION_SERVICE_URL: http://notification-service:8083
+  PAYMENT_SERVICE_URL: http://payment-service:8084
+  LIMITED_DEALS_LOKI_URL: http://loki:3100/loki/api/v1/push
+  ENTRY_TOKEN_REQUIRED: "true"
+  DEV_LOGIN_ENABLED: "true"   # 부하 테스트용 로그인. 실제 서비스로 열 때는 false
+  # 노트북 한 대(Docker 메모리 약 4GB)에 파드 6개를 올리려고 JVM을 작게 쓴다.
+  # ActiveProcessorCount=2: JVM이 CPU를 8개로 보고 GC, 컴파일 스레드를 많이 만드는 것을 막는다
+  JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=60 -XX:ActiveProcessorCount=2 -XX:+ExitOnOutOfMemoryError"

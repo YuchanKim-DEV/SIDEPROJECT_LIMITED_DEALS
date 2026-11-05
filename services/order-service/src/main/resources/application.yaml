@@ -16,6 +16,8 @@ spring:
       # 로컬 개발용: 엔티티를 보고 없는 테이블과 칸만 추가한다. 운영에서는 쓰지 않는다.
       ddl-auto: update
     show-sql: true
+    # 요청이 끝날 때까지 DB 커넥션을 붙잡지 않게 끈다(기본은 켜짐). 트랜잭션이 끝나면 바로 돌려준다(실험 09)
+    open-in-view: false
     properties:
       hibernate:
         format_sql: true
@@ -38,6 +40,11 @@ spring:
         delivery.timeout.ms: 10000
         request.timeout.ms: 3000
         max.block.ms: 3000         # 브로커가 없을 때 오래 붙잡혀 있지 않게
+    consumer:   # 결제 결과(payment-events)를 받는다(8단계)
+      group-id: order-service
+      auto-offset-reset: earliest
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
 limited-deals:
   outbox:
     relay-enabled: true

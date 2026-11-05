@@ -67,6 +67,22 @@ spring:
                   args:
                     name: notification-service
                     fallbackUri: forward:/fallback/notification-service
+            - id: payment-service
+              uri: ${PAYMENT_SERVICE_URL:http://localhost:8084}
+              predicates:
+                - Path=/api/payments/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: payment-service
+                    fallbackUri: forward:/fallback/payment-service
+limited-deals:
+  auth:
+    enabled: ${AUTH_ENABLED:true}                    # false: 예전 실험 스크립트처럼 X-User-Id를 그대로 믿는다(로컬 실험 전용)
+    jwt-secret: ${JWT_SECRET:}                       # 비어 있으면 로컬 개발용 키(경고 로그). 운영은 Secret으로 준다
+    token-ttl: 30m
+    dev-login-enabled: ${DEV_LOGIN_ENABLED:true}     # userId만으로 토큰 발급(k6, 테스트 화면용). 운영에서는 false
+    admin-password: ${ADMIN_PASSWORD:}               # 비어 있으면 관리자 로그인이 닫힌다
 management:
   endpoints:
     web:

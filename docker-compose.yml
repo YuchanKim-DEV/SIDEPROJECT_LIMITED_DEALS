@@ -84,6 +84,71 @@ services:
       - prometheus
       - loki
 
+  # ---- 서버 5개 (7, 8단계). 기본으로는 뜨지 않고, --profile apps를 줄 때만 컨테이너로 뜬다 ----
+  # 먼저: ./gradlew bootJar && scripts/deploy/build-images.sh
+  # 실행: docker compose --profile apps up -d   (scripts/run-local.sh로 띄운 서버와 포트가 같으니 하나만 쓴다)
+  gateway:
+    image: limited-deals/gateway:local
+    profiles: [apps]
+    ports: ["8000:8000"]
+    environment:
+      REDIS_HOST: redis
+      QUEUE_SERVICE_URL: http://queue-service:8081
+      ORDER_SERVICE_URL: http://order-service:8082
+      NOTIFICATION_SERVICE_URL: http://notification-service:8083
+      PAYMENT_SERVICE_URL: http://payment-service:8084
+      JWT_SECRET: ${JWT_SECRET:-}         # 비어 있으면 로컬 개발용 키(경고 로그)
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-} # 비어 있으면 관리자 로그인이 닫힌다
+      LIMITED_DEALS_LOKI_URL: http://loki:3100/loki/api/v1/push
+    depends_on: [redis, queue-service, order-service, notification-service, payment-service]
+
+  queue-service:
+    image: limited-deals/queue-service:local
+    profiles: [apps]
+    ports: ["8081:8081"]
+    environment:
+      REDIS_HOST: redis
+      LIMITED_DEALS_LOKI_URL: http://loki:3100/loki/api/v1/push
+    depends_on: [redis]
+
+  order-service:
+    image: limited-deals/order-service:local
+    profiles: [apps]
+    ports: ["8082:8082"]
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      KAFKA_BOOTSTRAP: kafka:29092
+      QUEUE_SERVICE_URL: http://queue-service:8081
+      ENTRY_TOKEN_REQUIRED: ${ENTRY_TOKEN_REQUIRED:-true}
+      LIMITED_DEALS_LOKI_URL: http://loki:3100/loki/api/v1/push
+    depends_on: [mysql, kafka, queue-service]
+    restart: on-failure   # MySQL이 아직 준비 중이면 실패하고 다시 뜬다
+
+  notification-service:
+    image: limited-deals/notification-service:local
+    profiles: [apps]
+    ports: ["8083:8083"]
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      KAFKA_BOOTSTRAP: kafka:29092
+      LIMITED_DEALS_LOKI_URL: http://loki:3100/loki/api/v1/push
+    depends_on: [mysql, kafka]
+    restart: on-failure
+
+  payment-service:
+    image: limited-deals/payment-service:local
+    profiles: [apps]
+    ports: ["8084:8084"]
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      KAFKA_BOOTSTRAP: kafka:29092
+      LIMITED_DEALS_LOKI_URL: http://loki:3100/loki/api/v1/push
+    depends_on: [mysql, kafka]
+    restart: on-failure
+
 volumes:
   mysql_data:
   redis_data:

@@ -1,0 +1,56 @@
+server:
+  port: 8084
+spring:
+  application:
+    name: payment-service
+  datasource:
+    # 로컬에서는 DB를 하나 함께 쓰고 테이블만 나눈다(payment_*, payments). 운영에서는 서비스마다 DB를 분리한다.
+    # pg_transactions는 모의 PG(바깥 회사)의 기록이다. 실제로는 우리 DB에 없다.
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/limited_deals?serverTimezone=UTC
+    username: admin
+    password: ${MYSQL_PASSWORD}
+  jpa:
+    hibernate:
+      ddl-auto: update
+    open-in-view: false
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    consumer:
+      group-id: payment-service
+      auto-offset-reset: latest   # 결제 서버를 처음 붙일 때 예전 주문(결제 기능 전)까지 결제하지 않도록 새 이벤트부터 읽는다
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all
+      properties:
+        enable.idempotence: true
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 3000
+        max.block.ms: 3000
+limited-deals:
+  outbox:
+    relay-enabled: true
+    relay-interval-ms: 300
+    topic: payment-events
+  payment:
+    chaos-enabled: ${CHAOS_ENABLED:false}   # PG 장애 스위치(/api/payments/admin/pg). 운영에서는 끈다
+    reconcile-interval-ms: 30000            # 대사 주기
+    reconcile-open-after-seconds: 30        # 이보다 오래 끝나지 않은 결제를 PG에 조회한다
+    pg-fee-basis-points: 300                # PG 수수료 3.00%
+    pg:
+      decline-rate: 0
+      timeout-rate: 0
+      latency-ms: 20
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}   # Grafana에서 서버별로 나눠 보기 위한 표시
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true                # p95, p99 응답 시간을 계산할 수 있게 구간별로 센다

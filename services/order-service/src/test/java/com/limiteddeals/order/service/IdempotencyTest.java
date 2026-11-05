@@ -106,4 +106,19 @@ class IdempotencyTest {
         assertThat(orderIds).hasSize(1); // 결과를 받은 요청은 모두 같은 주문 번호
         assertThat(productRepository.findById(id).orElseThrow().getStock()).isEqualTo(9);
     }
+
+    @Test
+    void 마지막_재고를_산_사람이_다시_보내면_품절이_아니라_자기_주문을_받는다() {
+        Long id = productRepository.save(new Product("한정판", 10_000, 1)).getId();
+        PlacedOrder first = orderFacade.place(new OrderCreateRequest(id, 1), StockStrategy.ATOMIC, "last-one");
+
+        // 품절 빠른 거절보다 멱등 키 확인이 먼저다(응답을 못 받고 재시도한 경우)
+        PlacedOrder retry = orderFacade.place(new OrderCreateRequest(id, 1), StockStrategy.ATOMIC, "last-one");
+
+        assertThat(retry.replayed()).isTrue();
+        assertThat(retry.response().orderId()).isEqualTo(first.response().orderId());
+        assertThatThrownBy(() -> orderFacade.place(new OrderCreateRequest(id, 1), StockStrategy.ATOMIC, "someone-else"))
+                .isInstanceOf(OutOfStockException.class);
+        assertThat(idempotencyRecordRepository.findByIdempotencyKey("someone-else")).isEmpty(); // 거절은 기록을 남기지 않는다
+    }
 }

@@ -7,7 +7,9 @@ import com.limiteddeals.queue.service.QueueService;
 import com.limiteddeals.queue.service.QueueStreamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.util.Map;
@@ -36,10 +38,20 @@ public class QueueController {
         return queueService.status(productId, userId);
     }
 
-    /** 내 순번을 1초마다 밀어주는 스트림(SSE). 브라우저가 매번 묻지 않아도 된다. EventSource는 헤더를 못 보내서 userId를 쿼리로 받는다. */
+    /**
+     * 내 순번을 1초마다 밀어주는 스트림(SSE). 브라우저가 매번 묻지 않아도 된다.
+     * 게이트웨이가 토큰(?access_token=)을 확인하고 X-User-Id를 붙여 준다. 그 값이 있으면 쿼리의 userId보다 먼저 쓴다
+     * (쿼리는 손님이 마음대로 바꿀 수 있다). 쿼리 userId는 게이트웨이 인증을 끈 예전 실험용이다.
+     */
     @GetMapping(path = "/stream", produces = "text/event-stream")
-    public SseEmitter stream(@PathVariable long productId, @RequestParam String userId) {
-        return streamService.subscribe(productId, userId);
+    public SseEmitter stream(@PathVariable long productId,
+                             @RequestHeader(name = "X-User-Id", required = false) String trustedUserId,
+                             @RequestParam(required = false) String userId) {
+        String who = trustedUserId != null ? trustedUserId : userId;
+        if (who == null || who.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "사용자를 알 수 없습니다");
+        }
+        return streamService.subscribe(productId, who);
     }
 
     /** 주문 서버용 입장권 확인. 유효하면 200, 아니면 403. */

@@ -4,10 +4,12 @@ import com.limiteddeals.order.domain.IdempotencyRecord;
 import com.limiteddeals.order.domain.Order;
 import com.limiteddeals.order.domain.Product;
 import com.limiteddeals.order.dto.OrderCreateRequest;
+import com.limiteddeals.order.dto.OrderDetailResponse;
 import com.limiteddeals.order.dto.OrderResponse;
 import com.limiteddeals.order.exception.IdempotencyInProgressException;
 import com.limiteddeals.order.exception.IdempotencyKeyMismatchException;
 import com.limiteddeals.order.exception.OptimisticConflictException;
+import com.limiteddeals.order.exception.OrderNotFoundException;
 import com.limiteddeals.order.exception.OutOfStockException;
 import com.limiteddeals.order.exception.ProductNotFoundException;
 import com.limiteddeals.order.repository.IdempotencyRecordRepository;
@@ -22,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.json.JsonMapper;
 
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 /**
@@ -55,21 +58,39 @@ public class OrderService {
      */
     @Transactional
     public OrderResponse place(OrderCreateRequest request, StockStrategy strategy, String userId) {
+        if (strategy == StockStrategy.ATOMIC) {
+            return placeLockingLast(request, userId);
+        }
         int remainingStock = switch (strategy) {
             case NAIVE -> decreaseNaively(request);
             case ATOMIC -> decreaseAtomically(request);
             case PESSIMISTIC -> decreasePessimistically(request);
             case OPTIMISTIC -> decreaseOptimistically(request);
         };
-        Order order = orderRepository.save(new Order(request.productId(), request.quantity(), userId));
+        long amount = findProduct(request.productId()).getPrice() * request.quantity();
+        Order order = orderRepository.save(new Order(request.productId(), request.quantity(), userId, amount));
         saveOrderPlacedEvent(order);
+        return new OrderResponse(order.getId(), request.productId(), order.getQuantity(), remainingStock);
+    }
+
+    /**
+     * [atomic] 재고 행의 락을 트랜잭션 맨 끝에 잡는다(실험 09).
+     * UPDATE가 행을 잠그면 커밋할 때까지 놓지 않는다. 그 사이의 일(주문, Outbox 저장)이 느리면 같은 상품을 사려는
+     * 모든 요청이 그만큼 더 기다린다. 그래서 가격 읽기, 주문·이벤트 저장을 먼저 하고 재고 UPDATE를 마지막에 한다.
+     * 재고가 모자라면 예외로 트랜잭션 전체가 취소되어, 먼저 저장한 주문과 이벤트도 남지 않는다.
+     */
+    private OrderResponse placeLockingLast(OrderCreateRequest request, String userId) {
+        long amount = findProduct(request.productId()).getPrice() * request.quantity(); // 잠그지 않는 읽기, 없으면 404
+        Order order = orderRepository.save(new Order(request.productId(), request.quantity(), userId, amount));
+        saveOrderPlacedEvent(order);
+        int remainingStock = decreaseAtomically(request); // 여기서 잠그고, 커밋까지 남은 일은 거의 없다
         return new OrderResponse(order.getId(), request.productId(), order.getQuantity(), remainingStock);
     }
 
     private void saveOrderPlacedEvent(Order order) {
         String eventId = UUID.randomUUID().toString();
         OrderPlacedEvent event = new OrderPlacedEvent(eventId, order.getId(), order.getProductId(), order.getQuantity(),
-                order.getUserId(), Instant.now());
+                order.getAmount(), order.getUserId(), Instant.now());
         outboxEventRepository.save(new OutboxEvent(eventId, OrderPlacedEvent.TYPE, String.valueOf(order.getProductId()),
                 jsonMapper.writeValueAsString(event)));
     }
@@ -130,6 +151,29 @@ public class OrderService {
         return response;
     }
 
+    /**
+     * 주문 전에 미리 보는 멱등 키 기록. 없으면 비어 있음(처음 온 요청).
+     * 있는데 내용이 다르면 422, 아직 처리 중이면 409(기존 findReplay와 같은 규칙).
+     */
+    @Transactional(readOnly = true)
+    public Optional<OrderResponse> findExistingReplay(String key, String requestHash) {
+        return idempotencyRecordRepository.findByIdempotencyKey(key).map(record -> {
+            if (!record.getRequestHash().equals(requestHash)) {
+                throw new IdempotencyKeyMismatchException(key);
+            }
+            if (!record.isCompleted()) {
+                throw new IdempotencyInProgressException(key);
+            }
+            return record.toResponse();
+        });
+    }
+
+    /** 잠그지 않고 읽은 현재 재고(InnoDB는 다른 트랜잭션이 행을 잠그고 있어도 기다리지 않고 마지막 확정 값을 읽는다). 상품이 없으면 비어 있음. */
+    @Transactional(readOnly = true)
+    public Optional<Integer> availableStock(Long productId) {
+        return productRepository.findStockById(productId);
+    }
+
     /** 이미 처리된 멱등 키의 처음 결과를 찾는다. */
     @Transactional(readOnly = true)
     public OrderResponse findReplay(String key, String requestHash) {
@@ -142,6 +186,13 @@ public class OrderService {
             throw new IdempotencyInProgressException(key);
         }
         return record.toResponse();
+    }
+
+    /** 주문 한 건과 결제 상태. */
+    @Transactional(readOnly = true)
+    public OrderDetailResponse findOrder(Long orderId) {
+        return orderRepository.findById(orderId).map(OrderDetailResponse::from)
+                .orElseThrow(() -> new OrderNotFoundException(orderId));
     }
 
     private Product findProduct(Long id) {
