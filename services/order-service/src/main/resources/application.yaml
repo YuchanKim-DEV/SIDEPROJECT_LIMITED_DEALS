@@ -1,5 +1,8 @@
 server:
   port: 8082
+  tomcat:
+    mbeanregistry:
+      enabled: true   # 바쁜 요청 처리 스레드 수를 지표로 보기 위해
 spring:
   application:
     name: order-service
@@ -44,3 +47,9 @@ management:
     web:
       exposure:
         include: health,info,metrics,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}   # Grafana에서 서버별로 나눠 보기 위한 표시
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true                # p95, p99 응답 시간을 계산할 수 있게 구간별로 센다
