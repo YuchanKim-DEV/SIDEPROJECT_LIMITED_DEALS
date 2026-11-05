@@ -16,6 +16,11 @@ spring:
             connect-timeout: 1000     # 뒤쪽 서버 연결 1초
             response-timeout: 5s      # 응답 5초 넘으면 504로 끊는다(무한 대기 방지)
           routes:
+            # SSE 순번 스트림은 오래 열려 있어서 서킷 브레이커의 시간 제한(3초)을 붙이지 않는다
+            - id: queue-stream
+              uri: ${QUEUE_SERVICE_URL:http://localhost:8081}
+              predicates:
+                - Path=/api/queue/*/stream
             - id: queue-service
               uri: ${QUEUE_SERVICE_URL:http://localhost:8081}
               predicates:
@@ -27,6 +32,10 @@ spring:
                     redis-rate-limiter.replenishRate: 20
                     redis-rate-limiter.burstCapacity: 40
                     key-resolver: "#{@userKeyResolver}"
+                - name: CircuitBreaker
+                  args:
+                    name: queue-service
+                    fallbackUri: forward:/fallback/queue-service
             - id: order-service
               uri: ${ORDER_SERVICE_URL:http://localhost:8082}
               predicates:
@@ -38,7 +47,21 @@ spring:
                     redis-rate-limiter.replenishRate: 500
                     redis-rate-limiter.burstCapacity: 1000
                     key-resolver: "#{@globalKeyResolver}"
+                - name: CircuitBreaker
+                  args:
+                    name: order-service
+                    fallbackUri: forward:/fallback/order-service
             - id: notification-service
               uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
               predicates:
                 - Path=/api/notifications/**
+              filters:
+                - name: CircuitBreaker
+                  args:
+                    name: notification-service
+                    fallbackUri: forward:/fallback/notification-service
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
