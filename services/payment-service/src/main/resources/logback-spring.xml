@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- 콘솔과 Loki(로그 모음 서버)에 함께 남긴다. Loki가 꺼져 있으면 Loki 쪽 전송만 실패하고 앱은 그대로 돈다. -->
+<configuration>
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+    <include resource="org/springframework/boot/logging/logback/console-appender.xml"/>
+    <springProperty name="appName" source="spring.application.name"/>
+    <springProperty name="lokiUrl" source="limited-deals.loki-url" defaultValue="http://localhost:3100/loki/api/v1/push"/>
+
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>${lokiUrl}</url>
+        </http>
+        <labels>
+            app = ${appName}
+            level = %level
+        </labels>
+        <message>
+            <pattern>%level [%thread] %logger{36} - %msg%n%ex</pattern>
+        </message>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="LOKI"/>
+    </root>
+</configuration>
