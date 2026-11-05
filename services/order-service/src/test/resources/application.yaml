@@ -1,3 +1,9 @@
 spring:
   datasource:
     url: jdbc:h2:mem:testdb;MODE=MySQL
+  kafka:
+    admin:
+      auto-create: false   # 테스트는 Kafka 없이 돈다
+limited-deals:
+  outbox:
+    relay-enabled: false   # Outbox에 쌓이는지만 확인하고 실제 발행은 하지 않는다

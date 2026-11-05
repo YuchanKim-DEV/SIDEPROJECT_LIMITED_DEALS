@@ -9,6 +9,7 @@ import com.limiteddeals.order.exception.OutOfStockException;
 import com.limiteddeals.order.repository.IdempotencyRecordRepository;
 import com.limiteddeals.order.repository.OrderRepository;
 import com.limiteddeals.order.repository.ProductRepository;
+import com.limiteddeals.order.outbox.OutboxEventRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,11 +30,13 @@ class IdempotencyTest {
     @Autowired OrderFacade orderFacade;
     @Autowired ProductRepository productRepository;
     @Autowired OrderRepository orderRepository;
+    @Autowired OutboxEventRepository outboxEventRepository;
     @Autowired IdempotencyRecordRepository idempotencyRecordRepository;
 
     @AfterEach
     void cleanUp() {
         idempotencyRecordRepository.deleteAll();
+        outboxEventRepository.deleteAll();
         orderRepository.deleteAll();
         productRepository.deleteAll();
     }

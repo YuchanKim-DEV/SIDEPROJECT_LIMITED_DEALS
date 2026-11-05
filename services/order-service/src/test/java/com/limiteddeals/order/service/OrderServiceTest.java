@@ -6,6 +6,7 @@ import com.limiteddeals.order.dto.OrderResponse;
 import com.limiteddeals.order.exception.OutOfStockException;
 import com.limiteddeals.order.repository.OrderRepository;
 import com.limiteddeals.order.repository.ProductRepository;
+import com.limiteddeals.order.outbox.OutboxEventRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,9 +21,11 @@ class OrderServiceTest {
     @Autowired OrderService orderService;
     @Autowired ProductRepository productRepository;
     @Autowired OrderRepository orderRepository;
+    @Autowired OutboxEventRepository outboxEventRepository;
 
     @AfterEach
     void cleanUp() {
+        outboxEventRepository.deleteAll();
         orderRepository.deleteAll();
         productRepository.deleteAll();
     }
