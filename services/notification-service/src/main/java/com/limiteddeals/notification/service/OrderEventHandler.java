@@ -66,7 +66,7 @@ public class OrderEventHandler {
         String userId = event.hasNonNull("userId") ? event.get("userId").asString() : null;
         long delay = Duration.between(Instant.parse(event.get("occurredAt").asString()), Instant.now()).toMillis();
         notificationRepository.save(new Notification(eventId, orderId, productId, userId,
-                "주문 " + orderId + "번이 확정되었습니다.", delay));
+                "주문 " + orderId + "번이 접수되었습니다. 결제가 끝나면 확정됩니다.", delay));
         processed.increment();
         return true;
     }
