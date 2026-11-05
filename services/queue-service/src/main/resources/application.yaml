@@ -12,3 +12,9 @@ limited-deals:
   queue:
     admit-per-second: 100   # 1초마다 입장시키는 인원 (주문 서버가 버틸 수 있는 만큼)
     token-ttl-seconds: 300  # 입장권 유효 시간
+    chaos-enabled: ${CHAOS_ENABLED:false}   # 장애 실험 스위치(/api/queue/admin/chaos). 운영에서는 끈다
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

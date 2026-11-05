@@ -2,6 +2,7 @@ package com.limiteddeals.queue.controller;
 
 import com.limiteddeals.queue.domain.QueueStats;
 import com.limiteddeals.queue.domain.QueueStatus;
+import com.limiteddeals.queue.service.ChaosSettings;
 import com.limiteddeals.queue.service.QueueService;
 import com.limiteddeals.queue.service.QueueStreamService;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +22,7 @@ public class QueueController {
 
     private final QueueService queueService;
     private final QueueStreamService streamService;
+    private final ChaosSettings chaos;
 
     /** 줄 서기. 응답으로 내 순번(WAITING) 또는 입장권(ADMITTED)을 받는다. */
     @PostMapping("/enter")
@@ -44,6 +46,7 @@ public class QueueController {
     @GetMapping("/tokens/validate")
     public ResponseEntity<Map<String, Boolean>> validate(@PathVariable long productId,
                                                          @RequestParam String userId, @RequestParam String token) {
+        chaos.applyValidateDelay(); // 장애 실험: 일부러 느리게(기본 0)
         boolean valid = queueService.isValidToken(productId, userId, token);
         return ResponseEntity.status(valid ? 200 : 403).body(Map.of("valid", valid));
     }
