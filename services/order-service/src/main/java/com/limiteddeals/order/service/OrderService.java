@@ -1,12 +1,16 @@
 package com.limiteddeals.order.service;
 
+import com.limiteddeals.order.domain.IdempotencyRecord;
 import com.limiteddeals.order.domain.Order;
 import com.limiteddeals.order.domain.Product;
 import com.limiteddeals.order.dto.OrderCreateRequest;
 import com.limiteddeals.order.dto.OrderResponse;
+import com.limiteddeals.order.exception.IdempotencyInProgressException;
+import com.limiteddeals.order.exception.IdempotencyKeyMismatchException;
 import com.limiteddeals.order.exception.OptimisticConflictException;
 import com.limiteddeals.order.exception.OutOfStockException;
 import com.limiteddeals.order.exception.ProductNotFoundException;
+import com.limiteddeals.order.repository.IdempotencyRecordRepository;
 import com.limiteddeals.order.repository.OrderRepository;
 import com.limiteddeals.order.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +27,7 @@ public class OrderService {
 
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
+    private final IdempotencyRecordRepository idempotencyRecordRepository;
 
     /** 기본 방식(한 줄 UPDATE)으로 주문한다. */
     @Transactional
@@ -79,6 +84,37 @@ public class OrderService {
             throw new OptimisticConflictException(product.getId());
         }
         return newStock;
+    }
+
+    /**
+     * 멱등 키와 함께 주문한다. 키를 "먼저" 저장해서 자리를 잡은 뒤 주문을 처리하고, 결과를 키 기록에 남긴다.
+     * 모두 한 트랜잭션이라, 주문이 실패하면 키 기록도 함께 취소되어 같은 키로 다시 시도할 수 있다.
+     * 같은 키가 이미 있으면 saveAndFlush에서 중복 오류(DataIntegrityViolationException)가 나고, OrderFacade가 처음 결과를 다시 돌려준다.
+     */
+    @Transactional
+    public OrderResponse placeWithIdempotencyKey(String key, String requestHash, OrderCreateRequest request,
+                                                 StockStrategy strategy) {
+        IdempotencyRecord record = idempotencyRecordRepository.saveAndFlush(new IdempotencyRecord(key, requestHash));
+        OrderResponse response = place(request, strategy);
+        record.complete(response);
+        // atomic/optimistic 쿼리의 clearAutomatically가 1차 캐시를 비우면서 record도 관리 대상에서 빠진다(detached).
+        // 그래서 변경 감지에 기대지 않고 명시적으로 저장(merge)한다.
+        idempotencyRecordRepository.save(record);
+        return response;
+    }
+
+    /** 이미 처리된 멱등 키의 처음 결과를 찾는다. */
+    @Transactional(readOnly = true)
+    public OrderResponse findReplay(String key, String requestHash) {
+        IdempotencyRecord record = idempotencyRecordRepository.findByIdempotencyKey(key)
+                .orElseThrow(() -> new IdempotencyInProgressException(key)); // 첫 요청이 취소됐거나 아직 안 보임
+        if (!record.getRequestHash().equals(requestHash)) {
+            throw new IdempotencyKeyMismatchException(key);
+        }
+        if (!record.isCompleted()) {
+            throw new IdempotencyInProgressException(key);
+        }
+        return record.toResponse();
     }
 
     private Product findProduct(Long id) {
