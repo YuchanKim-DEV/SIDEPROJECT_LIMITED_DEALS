@@ -26,6 +26,13 @@ public class Product {
     @Column(nullable = false)
     private int stock;
 
+    /**
+     * 낙관적 락용 버전 번호. 재고를 바꿀 때마다 1씩 오른다.
+     * JPA의 @Version을 쓰지 않고 직접 비교한다(naive 방식은 버전을 보지 않아야 비교 실험이 된다).
+     */
+    @Column(nullable = false)
+    private long version;
+
     public Product(String name, long price, int stock) {
         this.name = name;
         this.price = price;
