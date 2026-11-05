@@ -7,11 +7,11 @@ Each service is its own Spring Boot app (own main class, `application.yaml`, por
 
 | Module | Port | Role | Store |
 |---|---|---|---|
-| `services/gateway` | 8080 | Entry point. Spring Cloud Gateway (WebFlux) routes by path | - |
-| `services/queue-service` | 8081 | Virtual waiting room, queue numbers, entry tokens (to build) | Redis |
-| `services/order-service` | 8082 | Orders and stock; holds the old `Member` code | MySQL |
+| `services/gateway` | 8000 | Entry point. Spring Cloud Gateway (WebFlux) routes by path, Redis rate limiting, serves the test console (`static/index.html`). 8000 because another local project holds 8080 | Redis (rate-limit counters) |
+| `services/queue-service` | 8081 | Virtual waiting room: Sorted Set queue, admission scheduler (Redis lock, N per second), entry tokens with TTL, SSE position stream, simulate endpoint | Redis |
+| `services/order-service` | 8082 | Products, stock, orders: 4 stock strategies (`?strategy=`), idempotency keys, entry-token check against queue-service (`ENTRY_TOKEN_REQUIRED`) | MySQL |
 
-Routes (gateway `application.yaml`): `/api/queue/**` → queue-service, `/api/orders/**` → order-service.
+Routes (gateway `application.yaml`): `/api/queue/**` → queue-service (rate limit per user 20/s, burst 40), `/api/orders/**` and `/api/products/**` → order-service (global 500/s, burst 1000).
 Packages: `com.limiteddeals.gateway`, `com.limiteddeals.queue`, `com.limiteddeals.order`.
 
 ## Gradle
