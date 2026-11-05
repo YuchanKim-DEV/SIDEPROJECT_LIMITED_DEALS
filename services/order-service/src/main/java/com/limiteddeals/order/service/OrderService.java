@@ -12,10 +12,17 @@ import com.limiteddeals.order.exception.OutOfStockException;
 import com.limiteddeals.order.exception.ProductNotFoundException;
 import com.limiteddeals.order.repository.IdempotencyRecordRepository;
 import com.limiteddeals.order.repository.OrderRepository;
+import com.limiteddeals.order.outbox.OrderPlacedEvent;
+import com.limiteddeals.order.outbox.OutboxEvent;
+import com.limiteddeals.order.outbox.OutboxEventRepository;
 import com.limiteddeals.order.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.json.JsonMapper;
+
+import java.time.Instant;
+import java.util.UUID;
 
 /**
  * 주문 한 번의 시도를 한 트랜잭션으로 처리한다(재고 차감 + 주문 저장).
@@ -28,6 +35,8 @@ public class OrderService {
     private final ProductRepository productRepository;
     private final OrderRepository orderRepository;
     private final IdempotencyRecordRepository idempotencyRecordRepository;
+    private final OutboxEventRepository outboxEventRepository;
+    private final JsonMapper jsonMapper;
 
     /** 기본 방식(한 줄 UPDATE)으로 주문한다. */
     @Transactional
@@ -37,14 +46,32 @@ public class OrderService {
 
     @Transactional
     public OrderResponse place(OrderCreateRequest request, StockStrategy strategy) {
+        return place(request, strategy, null);
+    }
+
+    /**
+     * 재고 차감 + 주문 저장 + Outbox 이벤트 저장을 한 트랜잭션으로 처리한다.
+     * 셋 중 하나라도 실패하면 모두 취소되므로, "주문은 있는데 이벤트가 없는" 상태가 생기지 않는다.
+     */
+    @Transactional
+    public OrderResponse place(OrderCreateRequest request, StockStrategy strategy, String userId) {
         int remainingStock = switch (strategy) {
             case NAIVE -> decreaseNaively(request);
             case ATOMIC -> decreaseAtomically(request);
             case PESSIMISTIC -> decreasePessimistically(request);
             case OPTIMISTIC -> decreaseOptimistically(request);
         };
-        Order order = orderRepository.save(new Order(request.productId(), request.quantity()));
+        Order order = orderRepository.save(new Order(request.productId(), request.quantity(), userId));
+        saveOrderPlacedEvent(order);
         return new OrderResponse(order.getId(), request.productId(), order.getQuantity(), remainingStock);
+    }
+
+    private void saveOrderPlacedEvent(Order order) {
+        String eventId = UUID.randomUUID().toString();
+        OrderPlacedEvent event = new OrderPlacedEvent(eventId, order.getId(), order.getProductId(), order.getQuantity(),
+                order.getUserId(), Instant.now());
+        outboxEventRepository.save(new OutboxEvent(eventId, OrderPlacedEvent.TYPE, String.valueOf(order.getProductId()),
+                jsonMapper.writeValueAsString(event)));
     }
 
     /** 1-4: 읽고, 빼고, 저장. 동시에 오면 같은 값을 읽고 덮어써서 갱신 손실이 생긴다. */
@@ -93,9 +120,9 @@ public class OrderService {
      */
     @Transactional
     public OrderResponse placeWithIdempotencyKey(String key, String requestHash, OrderCreateRequest request,
-                                                 StockStrategy strategy) {
+                                                 StockStrategy strategy, String userId) {
         IdempotencyRecord record = idempotencyRecordRepository.saveAndFlush(new IdempotencyRecord(key, requestHash));
-        OrderResponse response = place(request, strategy);
+        OrderResponse response = place(request, strategy, userId);
         record.complete(response);
         // atomic/optimistic 쿼리의 clearAutomatically가 1차 캐시를 비우면서 record도 관리 대상에서 빠진다(detached).
         // 그래서 변경 감지에 기대지 않고 명시적으로 저장(merge)한다.

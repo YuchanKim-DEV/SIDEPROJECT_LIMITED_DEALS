@@ -20,8 +20,17 @@ public class Order {
     @Column(nullable = false)
     private int quantity;
 
+    /** 주문한 사용자. 대기열·로그인을 거친 주문에만 있다. */
+    @Column(length = 50)
+    private String userId;
+
     public Order(Long productId, int quantity) {
+        this(productId, quantity, null);
+    }
+
+    public Order(Long productId, int quantity, String userId) {
         this.productId = productId;
         this.quantity = quantity;
+        this.userId = userId;
     }
 }

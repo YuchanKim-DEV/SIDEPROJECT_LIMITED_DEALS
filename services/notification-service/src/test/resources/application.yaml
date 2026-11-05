@@ -1,0 +1,11 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:notification;MODE=MySQL
+  kafka:
+    admin:
+      auto-create: false
+    listener:
+      auto-startup: false   # 테스트는 Kafka 없이 핸들러를 직접 부른다
+limited-deals:
+  notification:
+    failing-product-ids: 999

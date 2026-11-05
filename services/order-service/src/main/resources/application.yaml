@@ -16,7 +16,22 @@ spring:
     properties:
       hibernate:
         format_sql: true
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP:localhost:9092}
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      acks: all                 # 복제본까지 저장했다고 답할 때만 성공으로 본다
+      properties:
+        enable.idempotence: true   # 재전송해도 브로커에 같은 메시지가 두 번 쌓이지 않게
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 3000
+        max.block.ms: 3000         # 브로커가 없을 때 오래 붙잡혀 있지 않게
 limited-deals:
+  outbox:
+    relay-enabled: true
+    relay-interval-ms: 300
+    topic: order-events
   order:
     entry-token:
       # true면 대기열 입장권(X-User-Id, X-Entry-Token)이 있어야 주문할 수 있다. 1·2단계 실험을 위해 기본은 false
@@ -24,3 +39,8 @@ limited-deals:
       queue-url: ${QUEUE_SERVICE_URL:http://localhost:8081}
       connect-timeout-ms: 300
       read-timeout-ms: 500
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus

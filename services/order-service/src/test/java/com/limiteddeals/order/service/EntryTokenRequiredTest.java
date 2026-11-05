@@ -6,6 +6,7 @@ import com.limiteddeals.order.exception.EntryTokenRejectedException;
 import com.limiteddeals.order.exception.QueueUnavailableException;
 import com.limiteddeals.order.repository.OrderRepository;
 import com.limiteddeals.order.repository.ProductRepository;
+import com.limiteddeals.order.outbox.OutboxEventRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,9 +25,11 @@ class EntryTokenRequiredTest {
     @Autowired OrderFacade orderFacade;
     @Autowired ProductRepository productRepository;
     @Autowired OrderRepository orderRepository;
+    @Autowired OutboxEventRepository outboxEventRepository;
 
     @AfterEach
     void cleanUp() {
+        outboxEventRepository.deleteAll();
         orderRepository.deleteAll();
         productRepository.deleteAll();
     }

@@ -38,3 +38,7 @@ spring:
                     redis-rate-limiter.replenishRate: 500
                     redis-rate-limiter.burstCapacity: 1000
                     key-resolver: "#{@globalKeyResolver}"
+            - id: notification-service
+              uri: ${NOTIFICATION_SERVICE_URL:http://localhost:8083}
+              predicates:
+                - Path=/api/notifications/**

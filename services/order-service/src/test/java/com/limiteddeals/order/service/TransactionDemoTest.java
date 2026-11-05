@@ -3,6 +3,7 @@ package com.limiteddeals.order.service;
 import com.limiteddeals.order.domain.Product;
 import com.limiteddeals.order.repository.OrderRepository;
 import com.limiteddeals.order.repository.ProductRepository;
+import com.limiteddeals.order.outbox.OutboxEventRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,10 +22,12 @@ class TransactionDemoTest {
 
     @Autowired ProductRepository productRepository;
     @Autowired OrderRepository orderRepository;
+    @Autowired OutboxEventRepository outboxEventRepository;
     @Autowired TransactionTemplate transactionTemplate; // 코드 블록을 트랜잭션 상자에 넣어주는 도구
 
     @AfterEach
     void cleanUp() {
+        outboxEventRepository.deleteAll();
         orderRepository.deleteAll();
         productRepository.deleteAll();
     }

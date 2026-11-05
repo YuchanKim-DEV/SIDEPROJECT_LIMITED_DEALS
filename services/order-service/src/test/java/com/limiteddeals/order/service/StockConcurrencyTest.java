@@ -5,6 +5,7 @@ import com.limiteddeals.order.dto.OrderCreateRequest;
 import com.limiteddeals.order.exception.OutOfStockException;
 import com.limiteddeals.order.repository.OrderRepository;
 import com.limiteddeals.order.repository.ProductRepository;
+import com.limiteddeals.order.outbox.OutboxEventRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
@@ -31,9 +32,11 @@ class StockConcurrencyTest {
     @Autowired OrderFacade orderFacade;
     @Autowired ProductRepository productRepository;
     @Autowired OrderRepository orderRepository;
+    @Autowired OutboxEventRepository outboxEventRepository;
 
     @AfterEach
     void cleanUp() {
+        outboxEventRepository.deleteAll();
         orderRepository.deleteAll();
         productRepository.deleteAll();
     }
