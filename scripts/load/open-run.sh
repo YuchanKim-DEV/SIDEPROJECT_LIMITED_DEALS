@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # 3단계 오픈런 전체 흐름 실험: 손님 N명이 동시에 줄을 서고, 입장권을 받은 순서대로 구매한다.
 # 주문 서버는 ENTRY_TOKEN_REQUIRED=true로 띄워야 한다(입장권 없는 주문 거절).
+# 상품은 관리자 기능이라 주문 서버(8082)에 직접 만든다. 손님은 토큰으로 게이트웨이를 거친다(9단계).
 # 사용법: scripts/load/open-run.sh [게이트웨이 주소] [재고] [손님 수] [동시 실행 수]
 # 예:     scripts/load/open-run.sh http://localhost:8000 50 300 300
 set -euo pipefail
@@ -10,14 +11,17 @@ USERS=${3:-300}
 PARALLEL=${4:-300}
 DIR=$(cd "$(dirname "$0")" && pwd)
 
-PID=$(curl -s -X POST "$BASE/api/products" -H 'Content-Type: application/json' \
+ORDER_BASE=${ORDER_BASE:-http://localhost:8082}
+PID=$(curl -s -X POST "$ORDER_BASE/api/products" -H 'Content-Type: application/json' \
   -d "{\"name\":\"오픈런 실험\",\"price\":199000,\"stock\":${STOCK}}" \
   | python3 -c "import sys,json;print(json.load(sys.stdin)['id'])")
 echo "상품 id=${PID}, 재고=${STOCK}, 손님=${USERS}명, 동시=${PARALLEL}"
 
+CHEATER_JWT=$(curl -s -X POST "$BASE/api/auth/dev-login" -H 'Content-Type: application/json' -d '{"userId":"cheater"}' \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['accessToken'])")
 echo -n "입장권 없이 바로 주문: "
 curl -s -o /dev/null -w "%{http_code}\n" -X POST "$BASE/api/orders" -H 'Content-Type: application/json' \
-  -H "X-User-Id: cheater" -d "{\"productId\":${PID},\"quantity\":1}"
+  -H "Authorization: Bearer $CHEATER_JWT" -d "{\"productId\":${PID},\"quantity\":1}"
 
 START=$(date +%s)
 CODES=$(seq "$USERS" | xargs -P "$PARALLEL" -I{} "$DIR/open-run-user.sh" "$BASE" "$PID" "u{}-$RANDOM")

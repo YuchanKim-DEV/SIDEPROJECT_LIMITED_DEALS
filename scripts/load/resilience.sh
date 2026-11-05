@@ -41,11 +41,13 @@ sleep 6
 for i in $(seq 1 5); do echo "  주문 $i: $(order)   회로 닫힘=$(state closed)"; done
 
 echo; echo "== 4. 대기열 서버를 끄고 게이트웨이로 대기열 조회 12건"
+GW_JWT=$(curl -s -X POST "$GW/api/auth/dev-login" -H 'Content-Type: application/json' -d "{\"userId\":\"$USER_ID\"}" \
+  | python3 -c "import sys,json;print(json.load(sys.stdin)['accessToken'])")   # 9단계부터 게이트웨이는 토큰이 필요하다
 "$RUN" kill queue-service > /dev/null
 for i in $(seq 1 12); do
-  echo "  조회 $i: $(curl -s -o /dev/null -w "%{http_code} %{time_total}" "$GW/api/queue/$PID/status" -H "X-User-Id: u$i")"
+  echo "  조회 $i: $(curl -s -o /dev/null -w "%{http_code} %{time_total}" "$GW/api/queue/$PID/status" -H "Authorization: Bearer $GW_JWT")"
 done
-echo -n "  응답 본문: "; curl -s "$GW/api/queue/$PID/status" -H "X-User-Id: u99"; echo
+echo -n "  응답 본문: "; curl -s "$GW/api/queue/$PID/status" -H "Authorization: Bearer $GW_JWT"; echo
 
 echo; echo "== 5. 주문 서버를 끄고 게이트웨이로 상품 조회"
 "$RUN" kill order-service > /dev/null
