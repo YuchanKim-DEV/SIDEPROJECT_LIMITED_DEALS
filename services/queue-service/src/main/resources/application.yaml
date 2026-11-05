@@ -5,5 +5,10 @@ spring:
     name: queue-service
   data:
     redis:
-      host: localhost
+      host: ${REDIS_HOST:localhost}
       port: 6379
+      timeout: 1s
+limited-deals:
+  queue:
+    admit-per-second: 100   # 1초마다 입장시키는 인원 (주문 서버가 버틸 수 있는 만큼)
+    token-ttl-seconds: 300  # 입장권 유효 시간

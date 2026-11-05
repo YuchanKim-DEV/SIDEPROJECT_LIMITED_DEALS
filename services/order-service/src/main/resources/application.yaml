@@ -4,7 +4,7 @@ spring:
   application:
     name: order-service
   datasource:
-    url: jdbc:mysql://localhost:3306/limited_deals?serverTimezone=UTC
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:3306/limited_deals?serverTimezone=UTC
     username: admin
     password: ${MYSQL_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -16,3 +16,11 @@ spring:
     properties:
       hibernate:
         format_sql: true
+limited-deals:
+  order:
+    entry-token:
+      # true면 대기열 입장권(X-User-Id, X-Entry-Token)이 있어야 주문할 수 있다. 1·2단계 실험을 위해 기본은 false
+      required: ${ENTRY_TOKEN_REQUIRED:false}
+      queue-url: ${QUEUE_SERVICE_URL:http://localhost:8081}
+      connect-timeout-ms: 300
+      read-timeout-ms: 500

@@ -14,6 +14,11 @@ Last updated: 2026-10-18
 - The user confirmed the plan (online open-run, MSA, phases 0-9). Written into `docs/roadmap.md`, PR #14 open (2026-11-04). **Phase 1 (stock concurrency) in progress** on `feat/product-stock/2026-11-04` (commits local, not pushed; one PR when phase 1 is done). Teaching loop per piece: plain explanation → Claude implements → run and show → one check question (the user is still learning; go slowly). Done: 1-1 entity (Product), 1-2 product API, 1-3 transactions (order API, rollback demo test), 1-4 oversell reproduced (100 stock → 965, 255, 654 orders; `scripts/load/oversell.sh`, `docs/experiments/01-stock-concurrency.md`), 1-5 atomic UPDATE (`?strategy=atomic`, default; 0 oversell twice). **Paused after 1-5 (2026-11-04).** Next: 1-6 pessimistic lock (add `PESSIMISTIC` to `StockStrategy`), 1-7 optimistic lock, 1-8 compare at 10k. To run: start Docker, `docker compose up -d`, order-service with `MYSQL_PASSWORD` from the container env, `scripts/load/oversell.sh http://localhost:8082 100 1000 200 <strategy>`. Details: `architecture.md`, `commands.md`.
 - Still open: roadmap rewrite for MSA. The `ddl-auto` experiment branch was dropped (no commits); redo it inside order-service later.
 
+## Autonomous build (2026-11-05, the user asked: build everything locally, no questions, report at the end; no merges, no blog until review)
+- Stacked PRs: #15 phase 1 (stock concurrency) ← #16 phase 2 (idempotency) ← phase 3 (waiting room, branch `feat/waiting-room/2026-11-05`). Merge in order after the user's review.
+- Done so far: phases 1-3 with tests (23) and experiments `docs/experiments/01..03`. Gateway moved to port 8000. `scripts/run-local.sh start|stop`.
+- Next: phase 4 Kafka (outbox/inbox/DLQ, notification consumer), 5 resilience (gateway 500→503 on dead upstream, circuit breaker on entry-token check), 6 observability (Prometheus/Grafana/Loki, k6), 7 Dockerfiles + compose for apps + K8s manifests, then `docs/design-decisions.md` (answers: why Kafka, duplicates, consumer failure, Redis vs DB mismatch, 10x traffic), then blog drafts.
+
 ## Now
 - PR #6 (roadmap, working mode, answer style) and #7 (branch first) are merged; their local branches were cleaned up.
 - PR #8 (branch care) and #9 (local MySQL compose + `.env` ignored) are merged; branches cleaned up. Local and remote have only `main`.
