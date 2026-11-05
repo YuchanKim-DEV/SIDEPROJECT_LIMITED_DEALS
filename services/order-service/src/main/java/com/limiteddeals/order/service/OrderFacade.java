@@ -5,6 +5,7 @@ import com.limiteddeals.order.dto.OrderCreateRequest;
 import com.limiteddeals.order.dto.OrderResponse;
 import com.limiteddeals.order.dto.PlacedOrder;
 import com.limiteddeals.order.exception.OptimisticConflictException;
+import com.limiteddeals.order.exception.OutOfStockException;
 import com.limiteddeals.order.exception.TooManyConflictsException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +17,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.Optional;
 import java.util.function.Supplier;
 
 /**
@@ -48,6 +50,20 @@ public class OrderFacade {
         return place(request, strategy, idempotencyKey, userId);
     }
 
+    /**
+     * 품절 빠른 거절(실험 09): 잠그지 않는 읽기로 재고를 보고, 이미 부족하면 트랜잭션을 시작하지 않고 409.
+     * 품절 뒤에 몰려오는 수백 건이 같은 행의 락을 기다리며 DB 커넥션을 붙잡는 것을 막는다.
+     * 읽은 값이 조금 늦어도 괜찮다: 남아 있다고 잘못 보면 원래 경로(원자적 UPDATE)가 정확히 거절하고,
+     * 없다고 잘못 보는 경우는 결제 실패로 재고가 막 돌아온 순간뿐이다(그 사용자는 다시 시도하면 된다).
+     */
+    private void rejectIfSoldOut(OrderCreateRequest request) {
+        orderService.availableStock(request.productId()).ifPresent(stock -> {
+            if (stock < request.quantity()) {
+                throw new OutOfStockException(request.productId(), stock, request.quantity());
+            }
+        });
+    }
+
     /** 멱등 키 없이 주문한다. */
     public OrderResponse place(OrderCreateRequest request, StockStrategy strategy) {
         return withOptimisticRetry(request, strategy, () -> orderService.place(request, strategy));
@@ -63,10 +79,17 @@ public class OrderFacade {
 
     public PlacedOrder place(OrderCreateRequest request, StockStrategy strategy, String idempotencyKey, String userId) {
         if (idempotencyKey == null || idempotencyKey.isBlank()) {
+            rejectIfSoldOut(request);
             return new PlacedOrder(withOptimisticRetry(request, strategy,
                     () -> orderService.place(request, strategy, userId)), false);
         }
         String hash = requestHash(request);
+        // 이미 처리된 키면 처음 결과를 돌려준다. 품절 확인보다 먼저 해야, 마지막 재고를 산 사람이 재시도했을 때 409가 아니라 자기 주문을 받는다
+        Optional<OrderResponse> replay = orderService.findExistingReplay(idempotencyKey, hash);
+        if (replay.isPresent()) {
+            return new PlacedOrder(replay.get(), true);
+        }
+        rejectIfSoldOut(request);
         try {
             OrderResponse created = withOptimisticRetry(request, strategy,
                     () -> orderService.placeWithIdempotencyKey(idempotencyKey, hash, request, strategy, userId));
